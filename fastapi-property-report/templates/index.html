@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 style="margin-top:0">A one-page report for any property in the City of Sydney</h1>
+<p class="muted" style="max-width:640px">Type an address in the sidebar, or pick a suburb and choose from its recent sales.
+You'll get the property's estimated value and range, its value over time and sale history, risks, nearby schools and
+transport, and a snapshot of its suburb.</p>
+<div class="card" style="max-width:640px; margin-top:18px">
+  <h2>Try one</h2>
+  <ul class="results">
+    <li><a href="/property/GANSW705970502?address=26%20Tudor%20Street%2C%20Surry%20Hills">26 Tudor Street, Surry Hills<small>House</small></a></li>
+    <li><a href="/property/GANSW708007997?address=28%2F96-98%20Elizabeth%20Bay%20Road%2C%20Elizabeth%20Bay">28/96-98 Elizabeth Bay Road, Elizabeth Bay<small>Apartment</small></a></li>
+    <li><a href="/property/GANSW704799290?address=224%20Glebe%20Point%20Road%2C%20Glebe">224 Glebe Point Road, Glebe<small>House</small></a></li>
+  </ul>
+</div>
+{% endblock %}

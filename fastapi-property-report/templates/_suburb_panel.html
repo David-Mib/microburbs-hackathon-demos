@@ -1,0 +1,29 @@
+{# htmx partial: the suburb at a glance. `kind` is "house" or "unit", matching the property. #}
+{% from "_macros.html" import chart as draw_chart %}
+{% set price = market.median_sale_price or {} %}
+{% set rent = market.median_rent or {} %}
+{% set growth = market.price_growth_5y or {} %}
+{% set yld = market.yield_pct or {} %}
+{% set dom = market.days_on_market or {} %}
+{% set label = "houses" if kind == "house" else "units" %}
+<h2>About {{ suburb }}</h2>
+<div class="stats">
+  <div class="stat"><div class="k">Median house</div><div class="v">{{ price.house | money(short=True) }}</div></div>
+  <div class="stat"><div class="k">Median unit</div><div class="v">{{ price.unit | money(short=True) }}</div></div>
+  <div class="stat"><div class="k">Median rent, {{ label }}</div><div class="v">{{ rent[kind] | money }}{% if rent[kind] %}<span class="s">/wk</span>{% endif %}</div></div>
+  <div class="stat"><div class="k">5-year growth, {{ label }}</div><div class="v">{{ growth[kind] | pct(signed=True) }}</div></div>
+  <div class="stat"><div class="k">Gross yield, {{ label }}</div><div class="v">{{ yld[kind] | pct }}</div></div>
+  <div class="stat"><div class="k">Days on market</div><div class="v">{{ "%.0f" | format(dom[kind]) if dom[kind] else "–" }}</div></div>
+</div>
+<div class="stats" style="margin-top:12px">
+  <div class="stat"><div class="k">Population</div><div class="v">{{ "{:,}".format(hero.population) if hero.population else "–" }}</div></div>
+  <div class="stat"><div class="k">Dwellings</div><div class="v">{{ "{:,}".format(hero.dwellings) if hero.dwellings else "–" }}</div></div>
+  <div class="stat"><div class="k">Median household income</div><div class="v">{{ median_income | money }}{% if median_income %}<span class="s">/yr</span>{% endif %}</div></div>
+  <div class="stat"><div class="k">Households renting</div><div class="v">{{ "%.0f%%" | format(tenure.renting_pct) if tenure.renting_pct is not none else "–" }}</div>
+    {% if tenure.census_year %}<div class="s">Census {{ tenure.census_year }}</div>{% endif %}</div>
+</div>
+{% if chart %}
+<h3 style="font-size:15px; margin:20px 0 4px">Median {{ "house" if kind == "house" else "unit" }} price in {{ suburb }}</h3>
+{{ draw_chart(chart, line_colour="#6b4bd6") }}
+{% endif %}
+{% if price.as_of %}<p class="muted small" style="margin-bottom:0">Market figures as at {{ price.as_of | nice_date }}.</p>{% endif %}

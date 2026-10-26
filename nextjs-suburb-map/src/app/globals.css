@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+/*
+ * Tokens. Cool paper, deep navy ink, the Microburbs blue as the one accent.
+ * The request panel ("wire") is a deep navy slab so the calls read as a
+ * separate instrument next to the product.
+ */
+@theme {
+  --color-paper: #f5f7fa;
+  --color-card: #ffffff;
+  --color-ink: #0f1b2d;
+  --color-slate: #56657a;
+  --color-faint: #8a97a8;
+  --color-line: #dde3eb;
+  --color-brand: #4475e6;
+  --color-brand-deep: #2447a8;
+  --color-brand-wash: #e8eefc;
+
+  --color-ok: #3fb68b;
+  --color-ok-deep: #1f7a58;
+  --color-bad: #e5484d;
+  --color-bad-soft: #ff9592;
+  --color-warn: #d8583a;
+
+  --color-wire: #0e1a2b;
+  --color-wire-line: #1f2e44;
+  --color-wire-ink: #c9d6ea;
+  --color-wire-dim: #7c8ca5;
+  --color-json-key: #8fb4ff;
+  --color-json-str: #a8e0c1;
+  --color-json-num: #f5c46b;
+  --color-json-lit: #f59e9e;
+
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html {
+  background: var(--color-paper);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* The one orchestrated moment: map cells fill in as the data lands. */
+@keyframes cell-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cell-in {
+  animation: cell-in 0.6s ease-out both;
+}
+
+/* Suburb names on the city map: dark text with a white halo. */
+.map-label {
+  fill: var(--color-ink);
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}

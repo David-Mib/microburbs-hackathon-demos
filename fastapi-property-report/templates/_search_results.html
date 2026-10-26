@@ -1,0 +1,10 @@
+{# htmx partial: address matches. #}
+{% if results %}
+<ul class="results">
+  {% for r in results %}
+  <li><a href="/property/{{ r.id }}?address={{ r.display_name | urlencode }}">{{ r.display_name }}<small>{{ r.property_type | capitalize }}</small></a></li>
+  {% endfor %}
+</ul>
+{% elif message %}
+<p class="muted small">{{ message }}</p>
+{% endif %}

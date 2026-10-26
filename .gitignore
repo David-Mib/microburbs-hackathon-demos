@@ -1,0 +1,23 @@
+# Secrets: never commit a real key
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+.ipynb_checkpoints/
+.streamlit/secrets.toml
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

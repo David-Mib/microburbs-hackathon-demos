@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>{% block title %}Property Report{% endblock %} · Microburbs API demo</title>
+  {# htmx: live search and lazy panels, no build step. #}
+  <script src="https://unpkg.com/htmx.org@2.0.11/dist/htmx.min.js"
+          integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg" crossorigin="anonymous"></script>
+  {% block head %}{% endblock %}
+  <style>
+    :root { --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --card:#fff;
+            --accent:#1f6feb; --red:#d1495b; --amber:#e08a00; --green:#2e9e47; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+    a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+    .layout { display:grid; grid-template-columns: 300px 1fr; min-height:100vh; background:linear-gradient(to right, #fff 300px, var(--bg) 300px); }
+    aside { background:#fff; border-right:1px solid var(--line); padding:24px 20px; position:sticky; top:0; height:100vh; overflow:auto; }
+    aside h1 { font-size:20px; margin:0 0 2px; } aside h1 a { color:var(--ink); }
+    aside label { display:block; font-size:13px; font-weight:600; margin:18px 0 6px; }
+    input[type=search], select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
+    .results { list-style:none; margin:12px 0 0; padding:0; }
+    .results li a { display:block; padding:7px 8px; border-radius:6px; color:var(--ink); }
+    .results li a:hover { background:var(--bg); text-decoration:none; }
+    .results small { color:var(--muted); display:block; }
+    main { padding:28px 36px 48px; max-width:1280px; }
+    .muted { color:var(--muted); } .small { font-size:13px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
+    .card h2 { font-size:17px; margin:0 0 12px; }
+    .grid { display:grid; gap:18px; margin-top:18px; align-items:start; }
+    .g-3-2 { grid-template-columns: 3fr 2fr; } .col { display:flex; flex-direction:column; gap:18px; min-width:0; } .g-1-1 { grid-template-columns: 1fr 1fr; }
+    .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+    .stat .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .stat .v { font-size:24px; font-weight:650; white-space:nowrap; }
+    .stat .s { font-size:13px; color:var(--muted); }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); }
+    th { font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
+    td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
+    .pill { display:inline-block; padding:1px 9px; border-radius:99px; font-size:13px; font-weight:600; }
+    .pill.high { background:#fde8eb; color:var(--red); } .pill.medium { background:#fff2dc; color:#a86400; } .pill.ok { background:#e6f5ea; color:var(--green); }
+    .facts span { display:inline-block; background:#eef2f7; border-radius:6px; padding:2px 9px; margin:0 6px 6px 0; font-size:14px; }
+    details.raw { margin-top:18px; } details.raw pre { max-height:480px; overflow:auto; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:8px; font-size:12px; }
+    .legend span { margin-right:12px; font-size:13px; color:var(--muted); }
+    .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
+    #map { height:340px; border-radius:8px; }
+    .htmx-indicator { opacity:0; transition:opacity .2s; } .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity:1; }
+    footer { margin-top:28px; font-size:13px; color:var(--muted); }
+    @media (max-width: 900px) { .layout { grid-template-columns:1fr; background:var(--bg); } aside { position:static; height:auto; } .g-3-2, .g-1-1 { grid-template-columns:1fr; } main { padding:20px; } }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <h1><a href="/">Property Report</a></h1>
+    <div class="muted small">Any address in the City of Sydney.</div>
+
+    <label for="address">Search an address</label>
+    <input id="address" type="search" name="address" placeholder="e.g. 26 Tudor Street, Surry Hills" autocomplete="off"
+           hx-get="/search" hx-trigger="input changed delay:300ms, search" hx-target="#results" hx-indicator="#searching">
+
+    <label for="suburb">…or browse a suburb's recent sales</label>
+    <select id="suburb" name="suburb" hx-get="/suburb-sales" hx-trigger="change" hx-target="#results" hx-indicator="#searching">
+      {% for s in suburbs %}<option{% if s == selected_suburb %} selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+
+    <div id="searching" class="htmx-indicator muted small" style="margin-top:10px">Searching…</div>
+    <div id="results">{% block results %}{% endblock %}</div>
+  </aside>
+  <main>
+    {% block main %}{% endblock %}
+    <footer>Data: <a href="https://www.microburbs.com.au">Microburbs</a> API. Estimates are automated and indicative only.</footer>
+  </main>
+</div>
+</body>
+</html>

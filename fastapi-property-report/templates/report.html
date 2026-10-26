@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% from "_macros.html" import chart as draw_chart %}
+{% block title %}{{ address }}{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
+{% endblock %}
+{% block main %}
+
+{# ---- Header: what the property is, and the key numbers ---- #}
+<h1 style="margin:0 0 8px">{{ address }}</h1>
+<div class="facts">
+  <span>{{ (basics.dwelling_type or "property") | capitalize }}</span>
+  {% if basics.bed_count is not none %}<span>{{ basics.bed_count }} bed</span>{% endif %}
+  {% if basics.bath_count is not none %}<span>{{ basics.bath_count }} bath</span>{% endif %}
+  {% if basics.parking_count is not none %}<span>{{ basics.parking_count }} car</span>{% endif %}
+  {% if basics.land_area_sqm %}<span>{{ "{:,.0f}".format(basics.land_area_sqm) }} m² land</span>{% endif %}
+  {% if profile.suburb %}<span>{{ profile.suburb }} NSW {{ profile.postcode }}</span>{% endif %}
+</div>
+
+<div class="card stats" style="margin-top:10px">
+  <div class="stat">
+    <div class="k">Estimated value</div>
+    {% if avm %}
+      <div class="v">{{ avm.predicted_price | money }}</div>
+      <div class="s">Confidence {{ avm.confidence_score }}/100 · {{ avm.prediction_date | nice_date }}</div>
+    {% else %}
+      <div class="v muted">Not available</div>
+      <div class="s">No automated valuation for this property</div>
+    {% endif %}
+  </div>
+  <div class="stat">
+    <div class="k">Likely range (80%)</div>
+    {% if avm %}<div class="v">{{ avm.predicted_price_low | money(short=True) }} – {{ avm.predicted_price_high | money(short=True) }}</div>
+    {% else %}<div class="v muted">–</div>{% endif %}
+  </div>
+  <div class="stat">
+    <div class="k">Last sold</div>
+    {% if latest_sale and latest_sale.price %}
+      <div class="v">{{ latest_sale.price | money }}</div>
+      <div class="s">{{ latest_sale.date | nice_date }}{% if avm %} · estimate now {{ (avm.predicted_price / latest_sale.price - 1) | pct(signed=True) }}{% endif %}</div>
+    {% else %}<div class="v muted">No record</div>{% endif %}
+  </div>
+  <div class="stat">
+    <div class="k">Nearest station</div>
+    {% set train = (transport.nearest or {}).train %}
+    {% if train %}<div class="v">{{ train.distance_m | metres }}</div><div class="s">{{ train.name }}</div>
+    {% else %}<div class="v muted">&gt; 1 km</div>{% endif %}
+  </div>
+</div>
+
+{# ---- Two columns of cards: the property itself on the left, its surroundings on the right ---- #}
+<div class="grid g-3-2">
+  <div class="col">
+    <section class="card">
+      <h2>Value over time</h2>
+      {% if chart and chart.line %}
+        <div class="legend"><span><i class="dot" style="background:#1f6feb"></i>Estimated value</span>
+          {% if chart.dots %}<span><i class="dot" style="background:#d1495b"></i>Sold</span>{% endif %}</div>
+        {{ draw_chart(chart) }}
+      {% elif profile.suburb %}
+        {# No per-property series (apartments never have one): show the suburb's trend instead, via htmx. #}
+        <div hx-get="/suburb-trend?suburb={{ profile.suburb | urlencode }}&kind={{ kind }}" hx-trigger="load">
+          <p class="muted">Loading the suburb trend…</p>
+        </div>
+      {% else %}
+        <p class="muted">No value history for this property.</p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Sale history</h2>
+      {% if sales %}
+      <table>
+        <tr><th>Date</th><th>Event</th><th class="num">Price</th><th class="num">Change</th></tr>
+        {% for s in sales %}
+        <tr><td>{{ s.date | nice_date }}</td><td>{{ s.type }}</td><td class="num">{{ s.price | money }}</td>
+            <td class="num">{{ s.change | pct(signed=True) if s.change is defined else "–" }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="muted">No recorded sales for this property.</p>{% endif %}
+      {% if latest_rent %}
+        <p class="muted small" style="margin-bottom:0">
+          {% if latest_rent.price %}Last advertised for rent at {{ latest_rent.price | money }}/week ({{ latest_rent.date | nice_date("%b %Y") }}).
+          {% else %}Last listed for rent in {{ latest_rent.date | nice_date("%b %Y") }}, price not published.{% endif %}
+        </p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h2>Nearby schools</h2>
+      {% if schools %}
+      <table>
+        <tr><th>School</th><th>Sector</th><th>Level</th><th class="num">Distance</th><th>NAPLAN</th></tr>
+        {% for s in schools %}
+        <tr><td>{{ s.name }}</td><td>{{ s.sector | capitalize }}</td><td>{{ s.school_level_type }}</td>
+            <td class="num">{{ s.distance_m | metres }}</td><td>{{ s.naplan_label or "–" }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}<p class="muted">No schools found nearby.</p>{% endif %}
+    </section>
+  </div>
+  <div class="col">
+    <section class="card">
+      <h2>Neighbourhood</h2>
+      {% if map %}
+        <div id="map"></div>
+        <div class="legend" style="margin-top:8px">
+          <span><i class="dot" style="background:#d1495b"></i>This property</span>
+          <span><i class="dot" style="background:#1f6feb"></i>Nearest train / bus</span>
+          <span><i class="dot" style="background:#e08a00"></i>Recent sales</span>
+          <span><i class="dot" style="background:#2e9e47"></i>Shops, parks, food</span>
+        </div>
+      {% else %}<p class="muted">No location for this property.</p>{% endif %}
+    </section>
+    <section class="card">
+      <h2>Risks</h2>
+      <table>
+        {% for r in risks %}<tr><td>{{ r.label }}</td><td class="num"><span class="pill {{ r.level }}">{{ r.text }}</span></td></tr>{% endfor %}
+      </table>
+      <p class="muted small" style="margin-bottom:0">Overlays within 1 km. "Nearby" means under 200 m.</p>
+    </section>
+    <section class="card">
+      <h2>Getting around</h2>
+      {% set nearest = transport.nearest or {} %}
+      <table>
+        {% for mode, label in [("train", "Train / light rail"), ("bus", "Bus"), ("ferry", "Ferry")] %}
+        {% set stop = nearest[mode] %}
+        <tr><td>{{ label }}</td><td>{{ stop.name if stop and stop.name else "" }}</td>
+            <td class="num">{{ stop.distance_m | metres if stop else "over 1 km" }}</td></tr>
+        {% endfor %}
+      </table>
+      {% if transport.counts %}<p class="small muted">Within 1 km: {{ transport.counts.train }} train and light-rail stops, {{ transport.counts.bus }} bus stops.</p>{% endif %}
+      {% if amenity_counts %}
+      <div class="stats" style="margin-top:6px">
+        <div class="stat"><div class="k">Supermarkets</div><div class="v">{{ amenity_counts.supermarket or 0 }}</div></div>
+        <div class="stat"><div class="k">Parks</div><div class="v">{{ amenity_counts.green_spaces or 0 }}</div></div>
+        <div class="stat"><div class="k">Restaurants</div><div class="v">{{ amenity_counts.restaurant or 0 }}</div></div>
+      </div>
+      <p class="small muted" style="margin-bottom:0">Within 1 km.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+{# ---- Suburb panel: htmx fetches it once the report is on screen ---- #}
+{% if profile.suburb %}
+<section class="card" style="margin-top:18px"
+         hx-get="/property/{{ gnaf_id }}/suburb?suburb={{ profile.suburb | urlencode }}&kind={{ kind }}&show_chart={{ 1 if chart and chart.line else 0 }}" hx-trigger="load" hx-swap="innerHTML">
+  <h2>About {{ profile.suburb }}</h2>
+  <p class="muted">Loading suburb figures…</p>
+</section>
+{% endif %}
+
+<details class="raw">
+  <summary>Raw API responses (JSON) for GNAF id <code>{{ gnaf_id }}</code></summary>
+  <pre>{{ raw | tojson(indent=2) }}</pre>
+</details>
+
+{% if map %}
+<script type="application/json" id="map-data">{{ map | tojson }}</script>
+<script>
+  // Leaflet with OpenStreetMap tiles: free, no token, attribution required. Fine for a demo;
+  // for real traffic use a tile provider (OSM's tile usage policy asks heavy users to).
+  const d = JSON.parse(document.getElementById("map-data").textContent);
+  const map = L.map("map", { scrollWheelZoom: false }).setView(d.centre, 16);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+  const add = (points, colour, radius) => points.forEach(p =>
+    L.circleMarker([p.lat, p.lng], { radius, color: "#fff", weight: 1, fillColor: colour, fillOpacity: 0.9 })
+      .bindTooltip(p.name).addTo(map));
+  add(d.amenities, "#2e9e47", 4);
+  add(d.sales, "#e08a00", 6);
+  add(d.transport, "#1f6feb", 7);
+  add([{ lat: d.centre[0], lng: d.centre[1], name: "This property" }], "#d1495b", 10);
+</script>
+{% endif %}
+{% endblock %}
