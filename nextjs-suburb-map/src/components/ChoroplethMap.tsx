@@ -379,6 +379,12 @@ function tuneBase(m: MlMap, dark: boolean) {
     else if (l.type === "fill" && /water/.test(l.id)) m.setPaintProperty(l.id, "fill-color", dark ? "#0c1a2c" : "#d6e4f2");
     else if (l.type === "line" && /road|highway|bridge|tunnel|rail|transit|path/.test(l.id))
       m.setPaintProperty(l.id, "line-opacity", dark ? 0.32 : 0.7);
+    // Street and place names: light with a dark halo in dark mode, so they read over the colours.
+    else if (l.type === "symbol" && dark && l.layout?.["text-field"]) {
+      m.setPaintProperty(l.id, "text-color", "#d6deea");
+      m.setPaintProperty(l.id, "text-halo-color", "#0b111c");
+      m.setPaintProperty(l.id, "text-halo-width", 1.4);
+    }
   }
 }
 

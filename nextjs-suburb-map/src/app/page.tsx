@@ -28,9 +28,12 @@ export default function Home() {
   return (
     <main>
       {/* Hero */}
-      <section className="relative isolate overflow-hidden border-b border-line">
-        <div className="hero-glow absolute inset-0 -z-10" />
-        <div className="grid-fade absolute inset-0 -z-10" />
+      {/* z-10 and no overflow clip on the section: the search dropdown has to hang over the stats band below. */}
+      <section className="relative isolate z-10 border-b border-line">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="hero-glow absolute inset-0" />
+          <div className="grid-fade absolute inset-0" />
+        </div>
         <div className="mx-auto max-w-[1100px] px-4 pb-20 pt-16 text-center sm:px-6 sm:pt-24">
           <div className="inline-flex items-center gap-2 rounded-full border border-line bg-card/70 px-3.5 py-1.5 text-[13px] text-slate backdrop-blur">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
