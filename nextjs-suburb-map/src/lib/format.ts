@@ -2,6 +2,43 @@
 
 const isNum = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n);
 
+/**
+ * True for values the API means as "no value". Some fields arrive as pandas
+ * nulls written out as text ("NaT", "NaN", "nan", "None", "None None"), so
+ * treat those like null: format them as missing and hide the line.
+ */
+export function isMissing(v: unknown): boolean {
+  if (v == null) return true;
+  if (typeof v === "number") return !Number.isFinite(v);
+  if (typeof v === "string") return /^\s*(nat|nan|none|null|undefined|none none)?\s*$/i.test(v);
+  return false;
+}
+
+/** A date string, or null when the API sent a null in any of its forms. */
+export const validDate = (v: unknown): string | null =>
+  typeof v === "string" && !isMissing(v) && !Number.isNaN(new Date(v).getTime()) ? v : null;
+
+/**
+ * The API's raw property types ("Apartmentunitflat", "Apartment / Unit / Flat",
+ * "Newapartments", "unit", "House" ...) as one clean label. null when there is
+ * no type worth showing.
+ */
+export function propertyType(t: unknown): string | null {
+  if (typeof t !== "string" || isMissing(t)) return null;
+  const s = t.toLowerCase();
+  if (/studio/.test(s)) return "Studio";
+  if (/apartment|unit|flat/.test(s)) return "Unit";
+  if (/townhouse/.test(s)) return "Townhouse";
+  if (/terrace/.test(s)) return "Terrace";
+  if (/semi/.test(s)) return "Semi";
+  if (/duplex/.test(s)) return "Duplex";
+  if (/villa/.test(s)) return "Villa";
+  if (/land|vacant/.test(s)) return "Land";
+  if (/house/.test(s)) return "House";
+  if (/^other$/.test(s.trim())) return null;
+  return t.trim()[0].toUpperCase() + t.trim().slice(1).toLowerCase();
+}
+
 export const DASH = "–";
 
 /** $1.46m, $925k, $675 */
@@ -28,9 +65,8 @@ export const int = (n: unknown) => (isNum(n) ? Math.round(n).toLocaleString("en-
 export const perWeek = (n: unknown) => (isNum(n) ? `$${Math.round(n).toLocaleString("en-AU")}/wk` : DASH);
 
 export function date(iso: unknown): string {
-  if (typeof iso !== "string") return DASH;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  if (!validDate(iso)) return DASH;
+  const d = new Date(iso as string);
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 }
 

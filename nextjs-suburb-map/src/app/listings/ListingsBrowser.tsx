@@ -12,7 +12,7 @@ type Sort = "newest" | "price-asc" | "price-desc";
 type Kind = "all" | "house" | "unit";
 
 const HOUSE = /house|townhouse|terrace|villa|semi|duplex/i;
-const UNIT = /apartment|studio/i;
+const UNIT = /unit|studio/i;
 
 const PRICES: Record<Mode, number[]> = {
   buy: [500e3, 750e3, 1e6, 1.25e6, 1.5e6, 2e6, 3e6, 5e6],
@@ -114,7 +114,7 @@ export function ListingsBrowser({
             options={[
               ["all", "All types"],
               ["house", "Houses"],
-              ["unit", "Apartments"],
+              ["unit", "Units"],
             ]}
           />
           <Select label="Beds" value={beds} onChange={setBeds} options={[[-1, "Any beds"], [0, "Studio+"], [1, "1+ beds"], [2, "2+ beds"], [3, "3+ beds"], [4, "4+ beds"]]} />

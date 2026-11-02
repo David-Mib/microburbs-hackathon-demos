@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { type AddressMatch, type SuburbMatch, shortName, suburbHref } from "@/lib/api";
 import { useApi } from "@/lib/api-store";
 import { useSuburbList } from "@/lib/area";
+import { propertyType } from "@/lib/format";
 
 type Result =
   | { kind: "suburb"; name: string; href: string; sub: string }
@@ -74,7 +75,7 @@ export function UniversalSearch({
         kind: "address" as const,
         name: a.display_name,
         href: `/property?gnaf=${encodeURIComponent(a.id)}`,
-        sub: a.property_type ? `Property · ${a.property_type}` : "Property",
+        sub: propertyType(a.property_type) ? `Property · ${propertyType(a.property_type)}` : "Property",
       })),
     ];
   }, [names, localSuburbs, fuzzy.data, addresses.data]);

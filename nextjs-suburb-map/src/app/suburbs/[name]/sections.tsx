@@ -3,7 +3,7 @@ import { Columns, Card, Empty, HBars, Kpi, RangeBar, Section, Tag } from "@/comp
 import { TrendChart } from "@/components/report/TrendChart";
 import { type Point, shortName, suburbHref } from "@/lib/api";
 import { ServerCalls } from "@/lib/api-store";
-import { date, humanise, int, money, pct, signedPct } from "@/lib/format";
+import { date, humanise, int, money, pct, propertyType, signedPct } from "@/lib/format";
 import type { Report } from "./data";
 
 /*
@@ -163,7 +163,7 @@ export async function MarketSection({ r, name }: Props) {
                     <span className="min-w-0">
                       <span className="block truncate text-[14px] font-medium">{s.address}</span>
                       <span className="text-[12.5px] text-faint">
-                        {s.property_type}
+                        {propertyType(s.property_type) ?? "Property"}
                         {s.bedrooms ? ` · ${s.bedrooms} bed` : ""}
                         {s.bathrooms ? ` · ${s.bathrooms} bath` : ""} · {date(s.sold_date)}
                       </span>
@@ -244,7 +244,7 @@ export async function RisksSection({ r }: Props) {
     {
       label: "Flood",
       value: flood?.coverage_pct != null ? `${flood.coverage_pct.toFixed(1)}%` : "–",
-      sub: flood?.risk_band ? `of the suburb's area · ${humanise(flood.risk_band)} risk` : "of the suburb's area",
+      sub: flood?.risk_band && flood.risk_band.toLowerCase() !== "none" ? `of the suburb's area · ${humanise(flood.risk_band)} risk` : "of the suburb's area",
       tone: !flood?.coverage_pct ? "good" : flood.coverage_pct > 10 ? "bad" : "warn",
     },
     {

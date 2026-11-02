@@ -6,7 +6,7 @@ import { Failed, NoData, PageShell, Panel, Pending } from "@/components/PageShel
 import { SuburbSelect } from "@/components/Pickers";
 import { EXAMPLE_SUBURB, type HouseUnit, type Point, suburbPath } from "@/lib/api";
 import { type ApiResult, useApi } from "@/lib/api-store";
-import { DASH, date, int, money, moneyFull, pct, signedPct } from "@/lib/format";
+import { DASH, date, int, money, moneyFull, pct, propertyType, signedPct } from "@/lib/format";
 import { useQueryParam } from "@/lib/use-query-param";
 
 const HOUSE = "#4475e6";
@@ -157,7 +157,7 @@ export function MarketDashboard() {
                         {r.address}
                       </Link>
                     </td>
-                    <td className="py-2 text-slate">{r.property_type ?? DASH}</td>
+                    <td className="py-2 text-slate">{propertyType(r.property_type) ?? DASH}</td>
                     <td className="py-2 text-right tabular-nums">{r.bedrooms ?? DASH}</td>
                     <td className="py-2 text-right tabular-nums text-slate">{date(r.sold_date)}</td>
                     <td className="py-2 text-right font-semibold tabular-nums">{moneyFull(r.sold_price)}</td>

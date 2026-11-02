@@ -9,7 +9,7 @@ import { Choices } from "@/components/Pickers";
 import { EXAMPLE_PROPERTY, propertyPath, suburbPath } from "@/lib/api";
 import { type ApiResult, useApi } from "@/lib/api-store";
 import { EXAMPLE_PROPERTIES, useSuburbShapes } from "@/lib/area";
-import { DASH, date, metres, money, moneyFull, pctPoints } from "@/lib/format";
+import { DASH, date, metres, money, moneyFull, pctPoints, propertyType } from "@/lib/format";
 import { useQueryParam } from "@/lib/use-query-param";
 
 type Basics = {
@@ -150,7 +150,7 @@ export function PropertyProfile() {
               <div className="mt-5 h-12 w-72 animate-pulse rounded bg-ink/[.04]" />
             ) : basics.data ? (
               <dl className="mt-5 flex flex-wrap gap-x-7 gap-y-3">
-                <Fact label="Type" value={cap(basics.data.dwelling_type)} />
+                <Fact label="Type" value={propertyType(basics.data.dwelling_type) ?? DASH} />
                 <Fact label="Bedrooms" value={basics.data.bed_count ?? DASH} />
                 <Fact label="Bathrooms" value={basics.data.bath_count ?? DASH} />
                 <Fact label="Parking" value={basics.data.parking_count ?? DASH} />
@@ -478,7 +478,7 @@ function NearbyPanel({
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{titleCase(s.address)}</span>
                   <span className="text-[12.5px] text-slate">
-                    {cap(s.property_type)}
+                    {propertyType(s.property_type) ?? "Property"}
                     {s.bedrooms ? `, ${s.bedrooms} bed` : ""}, {date(s.date_sold)}, {metres(s.dist_km * 1000)}
                   </span>
                 </span>

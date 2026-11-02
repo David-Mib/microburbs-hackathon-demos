@@ -1,3 +1,4 @@
+import { propertyType, validDate } from "@/lib/format";
 import { shortName } from "@/lib/api";
 
 /**
@@ -74,19 +75,10 @@ type SaleRow = {
 export type FeedBody = { total?: number; results?: (ListingRow | SaleRow)[] };
 
 /** "2026-10-23" stays; "NaT", "", null → null. */
-const isoDate = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v : null);
+const isoDate = validDate;
 
-/** "Apartmentunitflat", "unit", "House" → "Apartment", "House"... */
-export function typeLabel(t: unknown): string {
-  const s = typeof t === "string" ? t.trim() : "";
-  if (!s) return "Property";
-  if (/apartment|unit|flat/i.test(s)) return "Apartment";
-  if (/studio/i.test(s)) return "Studio";
-  if (/townhouse/i.test(s)) return "Townhouse";
-  if (/terrace/i.test(s)) return "Terrace";
-  if (/house/i.test(s)) return "House";
-  return s[0].toUpperCase() + s.slice(1).toLowerCase();
-}
+/** One clean label per raw type (see propertyType in lib/format.ts). */
+export const typeLabel = (t: unknown): string => propertyType(t) ?? "Property";
 
 /** Agent copy arrives with HTML line breaks and entities; make it plain text. */
 export function plainText(s: string): string {
@@ -167,10 +159,9 @@ export function priceLabel(mode: Mode, price: number | null): string {
   return mode === "rent" ? `${full} per week` : full;
 }
 
-export function shortDate(iso: string | null, withYear = true): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+export function shortDate(iso: string | null | undefined, withYear = true): string {
+  if (!validDate(iso)) return "";
+  const d = new Date(iso as string);
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "short", ...(withYear ? { year: "numeric" } : {}) });
 }
 

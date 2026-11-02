@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { stockPhoto } from "@/lib/photos";
+import { validDate } from "@/lib/format";
 import { type Listing, type Mode, priceLabel, shortDate } from "./data";
 import { AreaIcon, BathIcon, BedIcon, CarIcon } from "./Icons";
 
@@ -58,7 +59,7 @@ export function ListingCard({
         </div>
         <div className="text-[13.5px] text-slate">{l.suburb} NSW</div>
         <Features l={l} className="mt-3" />
-        {l.date && (
+        {validDate(l.date) && (
           <div className="mt-3 border-t border-line pt-2.5 text-[12.5px] text-faint">
             {mode === "sold" ? `Sold ${shortDate(l.date)}` : `Listed ${shortDate(l.date)}`}
           </div>

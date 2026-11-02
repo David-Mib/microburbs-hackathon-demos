@@ -18,7 +18,7 @@ import {
 } from "@/components/listings/data";
 import { type SuburbListItem, propertyPath, shortName, suburbHref, suburbPath } from "@/lib/api";
 import { ServerCalls } from "@/lib/api-store";
-import { metres, money } from "@/lib/format";
+import { metres, money, validDate } from "@/lib/format";
 import { stockPhoto } from "@/lib/photos";
 import { api } from "@/lib/server/microburbs";
 import { LocationMap } from "./LocationMap";
@@ -177,7 +177,7 @@ export default async function Page({ params, searchParams }: { params: Promise<P
             <h1 className="mt-2 text-[18px] font-medium leading-snug">{l.address}</h1>
             <div className="text-[15px] text-slate">{l.suburb} NSW</div>
             <Features l={l} large className="mt-4" />
-            {l.date && (
+            {validDate(l.date) && (
               <div className="mt-4 border-t border-line pt-3 text-[13.5px] text-slate">
                 {mode === "sold" ? "Sold" : "Listed"} {shortDate(l.date)}
                 {!found && " · no longer in the live feed"}
@@ -364,7 +364,7 @@ function Estimate({ avm, mode, message }: { avm: Avm | null; mode: Mode; message
             <span>{money(avm.predicted_price_high)}</span>
           </div>
           <p className="mt-3 text-[12.5px] leading-5 text-faint">
-            Modelled value{mode === "rent" ? " to buy" : ""}, confidence {avm.confidence_score}/100, as of {shortDate(avm.prediction_date)}. From
+            Modelled value{mode === "rent" ? " to buy" : ""}, confidence {avm.confidence_score}/100{validDate(avm.prediction_date) ? `, as of ${shortDate(avm.prediction_date)}` : ""}. From
             valuation/avm.
           </p>
         </>
