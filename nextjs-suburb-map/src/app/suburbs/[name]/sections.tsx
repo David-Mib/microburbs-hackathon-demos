@@ -534,7 +534,7 @@ export async function NearbySection({ r, known }: Props) {
               return (
                 <li key={n.sal}>
                   {to ? (
-                    <Link href={suburbHref(to)} className="inline-flex gap-1.5 rounded-full border border-line px-3 py-1.5 text-[13.5px] hover:border-brand hover:text-brand-deep">
+                    <Link prefetch={false} href={suburbHref(to)} className="inline-flex gap-1.5 rounded-full border border-line px-3 py-1.5 text-[13.5px] hover:border-brand hover:text-brand-deep">
                       {inner}
                     </Link>
                   ) : (
@@ -565,7 +565,7 @@ export async function NearbySection({ r, known }: Props) {
               </>
             );
             return to ? (
-              <Link key={s.area_name} href={suburbHref(to)} className="rounded-2xl border border-line bg-card p-5 shadow-card transition hover:border-brand/50">
+              <Link key={s.area_name} prefetch={false} href={suburbHref(to)} className="rounded-2xl border border-line bg-card p-5 shadow-card transition hover:border-brand/50">
                 {body}
               </Link>
             ) : (

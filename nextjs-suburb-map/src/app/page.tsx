@@ -51,6 +51,7 @@ export default function Home() {
             {QUICK.map((q) => (
               <Link
                 key={q.href}
+                prefetch={false}
                 href={q.href}
                 className="rounded-full border border-line bg-card/60 px-3 py-1 text-slate transition hover:border-brand/50 hover:text-ink"
               >

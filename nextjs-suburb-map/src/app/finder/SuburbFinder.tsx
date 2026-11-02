@@ -216,7 +216,7 @@ export function SuburbFinder() {
               {rows.map((r) => (
                 <li key={r.suburb} className="grid grid-cols-[28px_1fr_auto] items-baseline gap-2 py-1.5">
                   <span className="text-right font-mono text-[12px] text-faint">{r.rank}</span>
-                  <Link href={suburbHref(r.suburb)} className="truncate hover:text-brand-deep">
+                  <Link prefetch={false} href={suburbHref(r.suburb)} className="truncate hover:text-brand-deep">
                     {shortName(r.suburb)}
                   </Link>
                   <span className="font-semibold tabular-nums">{r.value != null ? fmt(r.value) : ""}</span>

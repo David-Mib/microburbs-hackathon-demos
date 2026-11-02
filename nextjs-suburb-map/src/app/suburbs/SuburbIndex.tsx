@@ -72,6 +72,7 @@ export function SuburbIndex({ suburbs }: { suburbs: SuburbCard[] }) {
         {shown.map((s, i) => (
           <li key={s.name} className="fade-up" style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
             <Link
+              prefetch={false}
               href={suburbHref(s.name)}
               className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-card p-5 shadow-card transition hover:-translate-y-0.5 hover:border-brand/50"
             >

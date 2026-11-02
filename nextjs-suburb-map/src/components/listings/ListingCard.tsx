@@ -23,6 +23,7 @@ export function ListingCard({
   const src = photoUrl ?? stockPhoto(l.id, l.type).srcSmall;
   return (
     <Link
+      prefetch={false}
       href={href}
       className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-card shadow-card transition duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_18px_40px_-20px_rgba(0,0,0,.55)]"
     >

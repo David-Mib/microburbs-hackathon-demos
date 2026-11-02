@@ -291,7 +291,7 @@ function Valuation({ v }: { v: Avm }) {
   return (
     <div>
       <div className="text-[13px] text-slate">Estimated value, {date(v.prediction_date)}</div>
-      <div className="mt-1 text-[34px] font-semibold leading-none tracking-[-0.02em] text-brand-deep">
+      <div className="mt-1 text-[28px] font-semibold tabular-nums sm:text-[34px] leading-none tracking-[-0.02em] text-brand-deep">
         {moneyFull(v.predicted_price)}
       </div>
       <div className="relative mt-4 h-2 rounded-full bg-brand/25">

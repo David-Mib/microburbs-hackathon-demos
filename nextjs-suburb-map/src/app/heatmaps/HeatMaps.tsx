@@ -400,6 +400,7 @@ function Sidebar({
             ) : (
               <li key={r.name}>
                 <Link
+                  prefetch={false}
                   href={suburbHref(r.name)}
                   className="grid grid-cols-[20px_1fr_auto] items-center gap-x-2 rounded-md px-1 py-1 hover:bg-ink/[.04]"
                 >

@@ -74,7 +74,7 @@ export function HeatGrid({
           {rows.map((r) => (
             <tr key={r.name}>
               <th className="truncate pr-2 text-left font-normal">
-                <Link href={suburbHref(r.name)} className="text-slate hover:text-ink">
+                <Link prefetch={false} href={suburbHref(r.name)} className="text-slate hover:text-ink">
                   {shortName(r.name)}
                 </Link>
               </th>

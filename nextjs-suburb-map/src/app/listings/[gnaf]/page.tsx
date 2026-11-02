@@ -195,7 +195,7 @@ export default async function Page({ params, searchParams }: { params: Promise<P
 
           <div className="grid grid-cols-2 gap-2">
             {sal && (
-              <Link href={suburbHref(sal)} className="rounded-xl border border-line bg-card px-3 py-2.5 text-center text-[14px] font-medium shadow-card hover:border-brand/50">
+              <Link prefetch={false} href={suburbHref(sal)} className="rounded-xl border border-line bg-card px-3 py-2.5 text-center text-[14px] font-medium shadow-card hover:border-brand/50">
                 {shortName(sal)} report
               </Link>
             )}

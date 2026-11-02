@@ -43,7 +43,7 @@ export function CrimeDashboard() {
       controls={
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <SuburbSelect value={suburb} onChange={setSuburb} />
-          <Link href={suburbHref(suburb)} className="text-[14px] text-brand-deep hover:underline">
+          <Link prefetch={false} href={suburbHref(suburb)} className="text-[14px] text-brand-deep hover:underline">
             Full suburb report →
           </Link>
         </div>
