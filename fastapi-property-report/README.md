@@ -1,9 +1,11 @@
-# Property Report (FastAPI + htmx)
+# Property Report (FastAPI + htmx + Tailwind)
 
 A one-page property report for any address in the City of Sydney, built on the
 [Microburbs Hackathon API](https://api-ht.microburbs.com.au/docs).
 
-Type an address (or pick a suburb and choose one of its recent sales) and you get:
+One search box takes an address or a suburb, with suggestions as you type (like the Microburbs homepage).
+A suburb opens its page: market figures for houses and units, its people, the median price over time and its
+recent sales (each one links to its report). An address opens its report:
 
 - **What the property is**: dwelling type, beds, baths, parking, suburb
 - **Estimated value** with its 80% range and a confidence score, and how it compares with the last sale
@@ -17,9 +19,10 @@ Type an address (or pick a suburb and choose one of its recent sales) and you ge
 
 ![Screenshot of the report for 26 Tudor Street, Surry Hills](docs/screenshot.png)
 
-Pages are rendered on the server with Jinja2. [htmx](https://htmx.org) adds the live address search and loads the
-suburb panel after the report is on screen. The map is [Leaflet](https://leafletjs.com) with OpenStreetMap tiles.
-There is no JavaScript build step, and your API key never reaches the browser.
+Pages are rendered on the server with Jinja2. [htmx](https://htmx.org) adds the live search, "show more" sales and
+the suburb panel that loads after the report is on screen. Styling is [Tailwind CSS](https://tailwindcss.com), dark
+by default with a light toggle (remembered in the browser). The map is [Leaflet](https://leafletjs.com) with
+OpenStreetMap tiles. There is no JavaScript build step, and your API key never reaches the browser.
 
 ## Run it locally
 
@@ -40,23 +43,38 @@ Vercel runs FastAPI with zero configuration: it finds the `app` object in `main.
 
 1. Import the repository in Vercel and set the project's **Root Directory** to `fastapi-property-report`.
 2. Add an environment variable `MICROBURBS_API_KEY` with your key (and optionally `MICROBURBS_API_BASE`).
-3. Deploy.
+3. Deploy. `vercel.json` pins the function to Sydney (`syd1`), next to the API; from a US region each page
+   pays several trans-Pacific round trips.
+
+## Changing the styles
+
+`static/app.css` is built from `static/input.css` by Tailwind, scanning `templates/` for class names. Running the app
+needs nothing extra. If you add Tailwind classes that weren't used before, rebuild the CSS with the standalone
+Tailwind CLI (a single binary, no Node):
+
+```bash
+# download once: https://github.com/tailwindlabs/tailwindcss/releases (e.g. tailwindcss-macos-arm64), or use `npx @tailwindcss/cli`
+./tailwindcss -i static/input.css -o static/app.css --minify     # add --watch while you work
+```
 
 ## How it's put together
 
 | File | What it does |
 |---|---|
 | `microburbs.py` | A small API client: auth header, the `{"data": ...}` envelope, 403 → `OutsideAreaError`, and an in-memory cache (one hour) so repeat views don't repeat calls. No web-framework dependency, so you can reuse it in scripts. |
-| `main.py` | The FastAPI app: routes, parallel fetching (at most 6 calls in flight, the limit is ~10/s), and the small helpers that shape data for the templates, including a dependency-free SVG line chart. |
-| `templates/` | Jinja2 templates. `report.html` is the report; files starting with `_` are htmx partials. |
+| `main.py` | The FastAPI app: routes, concurrent fetching (independent calls run at the same time on one thread pool, at most 8 in flight; the limit is ~10/s), and the small helpers that shape data for the templates, including a dependency-free SVG line chart. |
+| `templates/` | Jinja2 templates. `report.html` is the report, `suburb.html` the suburb page; files starting with `_` are htmx partials or macros (the search box and the chart live in `_macros.html`). |
+| `static/` | `app.css` (Tailwind, prebuilt and committed), its source `input.css`, and the favicon. |
 
 Routes:
 
 | Route | Returns |
 |---|---|
-| `GET /` | Home page with the search sidebar |
-| `GET /search?address=...` | htmx partial: up to 10 matching addresses |
-| `GET /suburb-sales?suburb=...` | htmx partial: recent sales in a suburb, each linking to its report |
+| `GET /` | Home page: the search box and the 29 suburbs |
+| `GET /search?q=...` | htmx partial: matching suburbs and addresses, as you type |
+| `GET /go?q=...` | Enter in the search box: redirects to an exactly named suburb, else the best address, else the best suburb |
+| `GET /suburb/{name}` | Suburb page (`name` is the exact ABS name, e.g. `Glebe (NSW)`) |
+| `GET /suburb/{name}/sales?offset=...` | htmx partial: the next 25 recent sales |
 | `GET /property/{gnaf_id}` | The full report (a plain, shareable URL) |
 | `GET /property/{gnaf_id}/suburb?suburb=...&kind=house\|unit` | htmx partial: the suburb panel |
 | `GET /suburb-trend?suburb=...&kind=...` | htmx partial: suburb median price chart |
@@ -67,6 +85,10 @@ Routes:
   for that apartment). Every section checks for this and shows a short note instead.
 - A `403` means the property or suburb is outside the hackathon area (the 29 suburbs of the City of Sydney). The report
   page shows a friendly message, and the search box says there are no matches in the area.
+- A sale in a suburb's recent-sales list can carry an address ID (GNAF) that the current address file no longer has
+  (addresses get retired and re-issued, e.g. when a building is renumbered). The API answers `403` for those too, so a
+  report opened from a sales list (`?sale=1`) says the ID has been retired and offers the address's current record,
+  found by geocoding the address again on the same street.
 
 ## Endpoints used
 
@@ -93,7 +115,7 @@ Suburb (by exact ABS name, e.g. `Glebe (NSW)`):
 - `GET /v1/suburbs/{name}/demographics/income`
 - `GET /v1/suburbs/{name}/demographics/tenure`
 
-Lookup: `GET /v1/geocode/address`.
+Lookup: `GET /v1/geocode/address` and `GET /v1/geocode/suburb` (typo-tolerant: "surey" finds Surry Hills).
 
 ## Ideas for extending it
 

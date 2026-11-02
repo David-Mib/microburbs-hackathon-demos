@@ -90,6 +90,10 @@ class Microburbs:
     def geocode_address(self, address: str) -> Result:
         return self.get("/v1/geocode/address", address=address)
 
+    def geocode_suburb(self, q: str) -> Result:
+        """Typo-tolerant suburb autocomplete: 'surey' -> 'Surry Hills'."""
+        return self.get("/v1/geocode/suburb", q=q)
+
     # --- Property endpoints (keyed by GNAF id) ------------------------------
 
     def property(self, gnaf_id: str, endpoint: str, **params: Any) -> Result:

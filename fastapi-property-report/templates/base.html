@@ -1,77 +1,83 @@
 <!doctype html>
-<html lang="en-AU">
+<html lang="en-AU" class="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <title>{% block title %}Property Report{% endblock %} · Microburbs API demo</title>
+  {# Dark by default; a saved choice from the toggle wins. Runs before paint, so there is no flash. #}
+  <script>document.documentElement.classList.toggle("dark", localStorage.getItem("theme") !== "light");</script>
+  {# Tailwind, prebuilt from static/input.css (see README). #}
+  <link rel="stylesheet" href="/static/app.css">
   {# htmx: live search and lazy panels, no build step. #}
   <script src="https://unpkg.com/htmx.org@2.0.11/dist/htmx.min.js"
           integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg" crossorigin="anonymous"></script>
   {% block head %}{% endblock %}
-  <style>
-    :root { --ink:#1d2433; --muted:#667085; --line:#e4e7ec; --bg:#f6f7f9; --card:#fff;
-            --accent:#1f6feb; --red:#d1495b; --amber:#e08a00; --green:#2e9e47; }
-    * { box-sizing: border-box; }
-    body { margin:0; font:15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
-    a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
-    .layout { display:grid; grid-template-columns: 300px 1fr; min-height:100vh; background:linear-gradient(to right, #fff 300px, var(--bg) 300px); }
-    aside { background:#fff; border-right:1px solid var(--line); padding:24px 20px; position:sticky; top:0; height:100vh; overflow:auto; }
-    aside h1 { font-size:20px; margin:0 0 2px; } aside h1 a { color:var(--ink); }
-    aside label { display:block; font-size:13px; font-weight:600; margin:18px 0 6px; }
-    input[type=search], select { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff; }
-    .results { list-style:none; margin:12px 0 0; padding:0; }
-    .results li a { display:block; padding:7px 8px; border-radius:6px; color:var(--ink); }
-    .results li a:hover { background:var(--bg); text-decoration:none; }
-    .results small { color:var(--muted); display:block; }
-    main { padding:28px 36px 48px; max-width:1280px; }
-    .muted { color:var(--muted); } .small { font-size:13px; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; }
-    .card h2 { font-size:17px; margin:0 0 12px; }
-    .grid { display:grid; gap:18px; margin-top:18px; align-items:start; }
-    .g-3-2 { grid-template-columns: 3fr 2fr; } .col { display:flex; flex-direction:column; gap:18px; min-width:0; } .g-1-1 { grid-template-columns: 1fr 1fr; }
-    .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
-    .stat .k { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
-    .stat .v { font-size:24px; font-weight:650; white-space:nowrap; }
-    .stat .s { font-size:13px; color:var(--muted); }
-    table { width:100%; border-collapse:collapse; font-size:14px; }
-    th, td { text-align:left; padding:7px 6px; border-bottom:1px solid var(--line); }
-    th { font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.03em; }
-    td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
-    .pill { display:inline-block; padding:1px 9px; border-radius:99px; font-size:13px; font-weight:600; }
-    .pill.high { background:#fde8eb; color:var(--red); } .pill.medium { background:#fff2dc; color:#a86400; } .pill.ok { background:#e6f5ea; color:var(--green); }
-    .facts span { display:inline-block; background:#eef2f7; border-radius:6px; padding:2px 9px; margin:0 6px 6px 0; font-size:14px; }
-    details.raw { margin-top:18px; } details.raw pre { max-height:480px; overflow:auto; background:#0f172a; color:#e2e8f0; padding:14px; border-radius:8px; font-size:12px; }
-    .legend span { margin-right:12px; font-size:13px; color:var(--muted); }
-    .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
-    #map { height:340px; border-radius:8px; }
-    .htmx-indicator { opacity:0; transition:opacity .2s; } .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity:1; }
-    footer { margin-top:28px; font-size:13px; color:var(--muted); }
-    @media (max-width: 900px) { .layout { grid-template-columns:1fr; background:var(--bg); } aside { position:static; height:auto; } .g-3-2, .g-1-1 { grid-template-columns:1fr; } main { padding:20px; } }
-  </style>
 </head>
-<body>
-<div class="layout">
-  <aside>
-    <h1><a href="/">Property Report</a></h1>
-    <div class="muted small">Any address in the City of Sydney.</div>
+<body class="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+{% from "_macros.html" import search_box %}
 
-    <label for="address">Search an address</label>
-    <input id="address" type="search" name="address" placeholder="e.g. 26 Tudor Street, Surry Hills" autocomplete="off"
-           hx-get="/search" hx-trigger="input changed delay:300ms, search" hx-target="#results" hx-indicator="#searching">
+<header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/75">
+  <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-5 sm:px-6">
+    <a href="/" class="flex shrink-0 items-center gap-2.5">
+      <img src="/static/icon.svg" alt="Microburbs" width="32" height="32" class="size-8">
+      <span class="hidden leading-tight md:block">
+        <span class="block text-sm font-semibold text-slate-900 dark:text-white">Property Report</span>
+        <span class="block text-xs text-slate-500 dark:text-slate-400">Microburbs API demo</span>
+      </span>
+    </a>
+    <div class="min-w-0 flex-1 sm:max-w-xl">{% block header_search %}{{ search_box() }}{% endblock %}</div>
+    <button type="button" data-theme-toggle aria-label="Switch between dark and light mode" title="Dark / light"
+            class="ml-auto grid size-9 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">
+      <svg viewBox="0 0 24 24" class="size-4.5 dark:hidden" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      <svg viewBox="0 0 24 24" class="hidden size-4.5 dark:block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </div>
+</header>
 
-    <label for="suburb">…or browse a suburb's recent sales</label>
-    <select id="suburb" name="suburb" hx-get="/suburb-sales" hx-trigger="change" hx-target="#results" hx-indicator="#searching">
-      {% for s in suburbs %}<option{% if s == selected_suburb %} selected{% endif %}>{{ s }}</option>{% endfor %}
-    </select>
+<main class="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-16 sm:px-6 sm:pt-8">
+  {% block main %}{% endblock %}
+</main>
 
-    <div id="searching" class="htmx-indicator muted small" style="margin-top:10px">Searching…</div>
-    <div id="results">{% block results %}{% endblock %}</div>
-  </aside>
-  <main>
-    {% block main %}{% endblock %}
-    <footer>Data: <a href="https://www.microburbs.com.au">Microburbs</a> API. Estimates are automated and indicative only.</footer>
-  </main>
-</div>
+<footer class="border-t border-slate-200 dark:border-white/10">
+  <div class="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-4 py-6 text-sm text-slate-500 sm:px-6 dark:text-slate-400">
+    <span>Data: the <a class="link" href="https://www.microburbs.com.au">Microburbs</a> Hackathon API, City of Sydney.</span>
+    <span>Estimates are automated and indicative only.</span>
+  </div>
+</footer>
+
+<script>
+  // Theme toggle: flip the `dark` class and remember the choice.
+  document.querySelector("[data-theme-toggle]").addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  });
+
+  // Search suggestions: arrow keys move through them, Enter opens the highlighted one, Escape or a click
+  // elsewhere closes them. With nothing highlighted, Enter submits the form to /go, which picks the best match.
+  document.addEventListener("keydown", e => {
+    const form = e.target.closest && e.target.closest("[data-search]");
+    if (!form) return;
+    const items = [...form.querySelectorAll("[data-suggest] a")];
+    let i = items.findIndex(a => a.hasAttribute("data-active"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      i = e.key === "ArrowDown" ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
+      items.forEach((a, j) => a.toggleAttribute("data-active", j === i));
+      if (items[i]) items[i].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter" && i >= 0) {
+      e.preventDefault();
+      location.href = items[i].href;
+    } else if (e.key === "Escape") {
+      form.querySelector("[data-suggest]").innerHTML = "";
+    }
+  });
+  document.addEventListener("click", e => document.querySelectorAll("[data-search]").forEach(form => {
+    if (!form.contains(e.target)) form.querySelector("[data-suggest]").innerHTML = "";
+  }));
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>
