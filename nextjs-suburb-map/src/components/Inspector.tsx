@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DOCS_URL, KEY_PLACEHOLDER, asCurl, asFetch, asPython, safeDecode } from "@/lib/api";
 import { type Call, useApiLog } from "@/lib/api-store";
 import { bytes } from "@/lib/format";
+import { setApiPanelOpen } from "@/lib/theme";
 
 /**
  * The request panel. Sticky on the right on desktop; a sheet behind the
@@ -13,8 +14,13 @@ import { bytes } from "@/lib/format";
  * YOUR_TEAM_KEY.
  */
 export function Inspector() {
-  const { calls, selected, select, sheetOpen, setSheet } = useApiLog();
+  const { calls, selected, select, sheetOpen, setSheet, loadBody } = useApiLog();
   const current = calls.find((c) => c.id === selected) ?? calls[0];
+
+  // Calls the server made while rendering arrive without a body; fetch it when shown.
+  useEffect(() => {
+    if (current && current.state === "done" && current.body === undefined) loadBody(current.id);
+  }, [current, loadBody]);
   const pending = calls.filter((c) => c.state === "pending").length;
   const cached = calls.filter((c) => c.cached).length;
 
@@ -45,6 +51,17 @@ export function Inspector() {
           onClick={() => setSheet(false)}
         >
           Close
+        </button>
+        <button
+          type="button"
+          className="-mr-2 hidden items-center gap-1 rounded-md px-2 py-1 text-[12.5px] text-wire-dim hover:bg-white/5 hover:text-white lg:flex"
+          onClick={() => setApiPanelOpen(false)}
+          title="Hide the API calls panel (it stays hidden until you reopen it)"
+        >
+          Hide
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M6 4l4 4-4 4" />
+          </svg>
         </button>
       </div>
 
@@ -77,21 +94,35 @@ export function Inspector() {
     <>
       <aside
         aria-label="API calls"
-        className="sticky top-[65px] hidden h-[calc(100dvh-65px)] border-l border-line lg:block"
+        className="api-aside sticky top-16 hidden h-[calc(100dvh-4rem)] border-l border-line lg:block"
       >
         {panel}
       </aside>
 
-      {/* Phones and tablets: a bar that opens the same panel as a sheet. */}
+      {/* Desktop, panel hidden: a small pill brings it back. */}
+      <button
+        type="button"
+        onClick={() => setApiPanelOpen(true)}
+        className="api-reopen fixed bottom-5 right-5 z-30 hidden items-center gap-2.5 rounded-full border border-wire-line bg-wire py-2 pl-3 pr-4 text-[13px] font-medium text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,.6)] transition hover:-translate-y-0.5 lg:flex"
+      >
+        <CodeIcon />
+        API calls
+        <span className="rounded-full bg-white/10 px-1.5 font-mono text-[11.5px] text-wire-ink">
+          {pending ? `${pending}…` : calls.length}
+        </span>
+      </button>
+
+      {/* Phones and tablets: a pill that opens the same panel as a sheet. */}
       <div className="lg:hidden">
         <button
           type="button"
           onClick={() => setSheet(true)}
-          className="fixed inset-x-3 bottom-3 z-30 flex items-center justify-between rounded-xl bg-wire px-4 py-3 text-left text-white shadow-[0_8px_30px_rgba(15,27,45,.35)]"
+          className="fixed bottom-4 right-4 z-30 flex items-center gap-2.5 rounded-full border border-wire-line bg-wire py-2 pl-3 pr-4 text-[13px] font-medium text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,.6)]"
         >
-          <span className="text-[14px] font-semibold">See the API calls</span>
-          <span className="font-mono text-[12px] text-wire-dim">
-            {pending ? `${pending} in flight` : `${calls.length} returned`}
+          <CodeIcon />
+          API calls
+          <span className="rounded-full bg-white/10 px-1.5 font-mono text-[11.5px] text-wire-ink">
+            {pending ? `${pending}…` : calls.length}
           </span>
         </button>
         {sheetOpen && (
@@ -101,6 +132,14 @@ export function Inspector() {
         )}
       </div>
     </>
+  );
+}
+
+function CodeIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-json-key">
+      <path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" />
+    </svg>
   );
 }
 
@@ -141,7 +180,10 @@ function CallDetail({ call }: { call: Call }) {
         <Meta label="Status" value={call.status ?? (call.state === "pending" ? "…" : "failed")} tone={call.state} />
         <Meta label="API time" value={call.ms ? `${call.ms} ms` : call.state === "pending" ? "…" : "–"} />
         <Meta label="Size" value={call.size != null ? bytes(call.size) : "…"} />
-        <Meta label="Served from" value={call.state === "pending" ? "…" : call.cached ? "app cache" : "the API"} />
+        <Meta
+          label="Called from"
+          value={call.state === "pending" ? "…" : call.server ? "page render" : call.cached ? "app cache" : "browser"}
+        />
         {call.requestId && (
           <div className="col-span-2">
             <dt className="text-wire-dim">X-Request-Id</dt>
@@ -170,8 +212,14 @@ function CallDetail({ call }: { call: Call }) {
         <pre className="overflow-x-auto p-3 font-mono text-[12px] leading-5 text-wire-ink">{snippet}</pre>
       </div>
       <p className="mt-2 text-[12px] leading-5 text-wire-dim">
-        This page called the app&apos;s own <code className="text-wire-ink">/api/mb</code> route, which made this request
-        on the server with the team key. Swap <code className="text-wire-ink">{KEY_PLACEHOLDER}</code> for yours to run
+        {call.server ? (
+          <>This call was made on the server while the page rendered, with the team key.</>
+        ) : (
+          <>
+            This page called the app&apos;s own <code className="text-wire-ink">/api/mb</code> route, which made this
+            request on the server with the team key.
+          </>
+        )} Swap <code className="text-wire-ink">{KEY_PLACEHOLDER}</code> for yours to run
         it yourself.{" "}
         <a className="text-white underline decoration-brand underline-offset-2" href={DOCS_URL} target="_blank" rel="noreferrer">
           API reference
@@ -184,7 +232,11 @@ function CallDetail({ call }: { call: Call }) {
       ) : (
         <>
           {call.error && <p className="mt-2 text-[13px] leading-5 text-bad-soft">{call.error}</p>}
-          {call.body !== undefined && <JsonView value={call.body} />}
+          {call.body !== undefined ? (
+            <JsonView value={call.body} />
+          ) : (
+            !call.error && <p className="mt-2 text-[13px] text-wire-dim">Loading the response…</p>
+          )}
         </>
       )}
     </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ChoroplethMap, type Outline, RAMPS } from "@/components/ChoroplethMap";
 import { Failed, NoData, PageShell, Panel, Pending } from "@/components/PageShell";
-import { type Feature, shortName, suburbPath } from "@/lib/api";
+import { type Feature, shortName, suburbHref, suburbPath } from "@/lib/api";
 import { useApi, useApis } from "@/lib/api-store";
 import { useSuburbList } from "@/lib/area";
 import { int, money, pct } from "@/lib/format";
@@ -153,7 +153,7 @@ export function SuburbFinder() {
               <button
                 type="button"
                 onClick={() => setFilters(draft.filter((f) => f.min || f.max))}
-                className="rounded-lg bg-ink px-3 py-1.5 text-[14px] font-medium text-white hover:bg-ink/85"
+                className="rounded-lg bg-ink px-3 py-1.5 text-[14px] font-medium text-on-ink hover:bg-ink/85"
               >
                 Apply filters
               </button>
@@ -189,7 +189,7 @@ export function SuburbFinder() {
               groups={groups}
               onOutlineClick={(label) => {
                 const name = list.names.find((n) => shortName(n) === label);
-                if (name) router.push(`/search?suburb=${encodeURIComponent(name)}`);
+                if (name) router.push(suburbHref(name));
               }}
               maxHeight={620}
             />
@@ -216,7 +216,7 @@ export function SuburbFinder() {
               {rows.map((r) => (
                 <li key={r.suburb} className="grid grid-cols-[28px_1fr_auto] items-baseline gap-2 py-1.5">
                   <span className="text-right font-mono text-[12px] text-faint">{r.rank}</span>
-                  <Link href={`/search?suburb=${encodeURIComponent(r.suburb)}`} className="truncate hover:text-brand-deep">
+                  <Link href={suburbHref(r.suburb)} className="truncate hover:text-brand-deep">
                     {shortName(r.suburb)}
                   </Link>
                   <span className="font-semibold tabular-nums">{r.value != null ? fmt(r.value) : ""}</span>

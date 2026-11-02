@@ -15,6 +15,7 @@ export function PageShell({
   intro,
   endpoints,
   controls,
+  hero,
   children,
 }: {
   /** A demo from lib/pages.ts: fills in the title, intro and endpoint list. */
@@ -25,6 +26,8 @@ export function PageShell({
   /** Endpoint templates the page calls, as the API reference names them. */
   endpoints?: string[];
   controls?: React.ReactNode;
+  /** Extra content under the title (a search box, a stat strip). */
+  hero?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const demo = slug ? demoBySlug(slug) : undefined;
@@ -32,28 +35,39 @@ export function PageShell({
   intro ??= demo?.pitch;
   endpoints ??= demo?.endpoints;
   return (
-    <div className="mx-auto grid max-w-[1680px] lg:grid-cols-[minmax(0,1fr)_420px] xl:grid-cols-[minmax(0,1fr)_460px]">
-      <main className="min-w-0 px-4 pb-28 pt-7 sm:px-6 lg:pb-16 lg:pr-8">
-        <header className="max-w-[820px]">
-          {eyebrow && <div className="mb-2 text-[13px] font-medium uppercase tracking-[.08em] text-brand-deep">{eyebrow}</div>}
-          <h1 className="text-[32px] font-semibold leading-[1.05] tracking-[-0.025em] sm:text-[42px]">{title}</h1>
-          {intro && <div className="mt-3 text-[17px] leading-[1.5] text-slate">{intro}</div>}
-          {endpoints && endpoints.length > 0 && (
-            <details className="group mt-3 text-[14px]">
-              <summary className="cursor-pointer list-none text-brand-deep hover:underline">
-                <span className="group-open:hidden">Show the {endpoints.length} endpoints this page calls</span>
-                <span className="hidden group-open:inline">Hide endpoints</span>
-              </summary>
-              <ul className="mt-2 flex flex-wrap gap-1.5">
-                {endpoints.map((e) => (
-                  <li key={e} className="rounded bg-ink/[.05] px-2 py-1 font-mono text-[12px] text-ink">
-                    {e}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </header>
+    <div className="api-grid mx-auto grid max-w-[1680px] lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_440px]">
+      <main className="min-w-0 px-4 pb-24 pt-8 sm:px-6 lg:pb-16 lg:pr-8">
+        {(title || hero) && (
+          <header className={hero ? "" : "max-w-[860px]"}>
+            {eyebrow && (
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-line bg-card px-3 py-1 text-[12px] font-medium uppercase tracking-[.08em] text-slate">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {eyebrow}
+              </div>
+            )}
+            {title && (
+              <h1 className="text-[32px] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-[44px]">{title}</h1>
+            )}
+            {intro && <div className="mt-3 max-w-[70ch] text-[16.5px] leading-[1.55] text-slate">{intro}</div>}
+            {endpoints && endpoints.length > 0 && (
+              <details className="group mt-3 text-[13.5px]">
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-brand-deep hover:underline">
+                  <span className="font-mono text-[12px]">{"</>"}</span>
+                  <span className="group-open:hidden">The {endpoints.length} endpoints this page calls</span>
+                  <span className="hidden group-open:inline">Hide endpoints</span>
+                </summary>
+                <ul className="mt-2 flex flex-wrap gap-1.5">
+                  {endpoints.map((e) => (
+                    <li key={e} className="rounded-md border border-line bg-card px-2 py-1 font-mono text-[11.5px] text-slate">
+                      {e}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            {hero}
+          </header>
+        )}
         {controls && <div className="mt-6">{controls}</div>}
         <div className="mt-6">{children}</div>
       </main>
@@ -82,10 +96,10 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`flex min-w-0 flex-col rounded-2xl border border-line bg-card ${className}`}>
+    <section className={`flex min-w-0 flex-col rounded-2xl border border-line bg-card shadow-card ${className}`}>
       <div className="flex items-start justify-between gap-4 px-5 pt-5 sm:px-6">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{title}</h2>
+          <h2 className="text-[17px] font-semibold tracking-[-0.015em]">{title}</h2>
           {note && <p className="mt-1 text-[14px] leading-[1.45] text-slate">{note}</p>}
         </div>
         {action}
@@ -133,7 +147,7 @@ const shortPath = (p: string) => p.replace(/^\/v1\/(suburbs|properties)\/[^/]+/,
 
 /** Loading and failure states inside a panel. */
 export function Pending({ height = 160 }: { height?: number }) {
-  return <div className="animate-pulse rounded-lg bg-ink/[.04]" style={{ height }} aria-label="Loading" />;
+  return <div className="ghost rounded-xl" style={{ height }} aria-label="Loading" />;
 }
 
 export function Failed({ message }: { message: string }) {
@@ -143,7 +157,7 @@ export function Failed({ message }: { message: string }) {
 }
 
 export function NoData({ children = "The API has no figure for this one." }: { children?: React.ReactNode }) {
-  return <p className="rounded-lg bg-ink/[.03] px-3 py-2.5 text-[14px] text-slate">{children}</p>;
+  return <p className="rounded-lg border border-dashed border-line px-3 py-2.5 text-[14px] text-slate">{children}</p>;
 }
 
 /** Big number with a label, for KPI rows. */

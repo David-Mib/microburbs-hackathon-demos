@@ -25,12 +25,16 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/mb/[...path]
   // Next decodes each segment ("Surry%20Hills" → "Surry Hills"); encode them again.
   const upstreamPath = "/" + path.map(encodeURIComponent).join("/") + req.nextUrl.search;
   const r = await getUpstream(upstreamPath);
+  const ok = r.status >= 200 && r.status < 300;
 
   return new Response(r.body, {
     status: r.status,
     headers: {
       "content-type": r.contentType,
-      "cache-control": "no-store",
+      // Successful answers are cached by the CDN in front of the app (Vercel's
+      // edge) for an hour, then served stale while one request refreshes them.
+      // Errors are never cached.
+      "cache-control": ok ? "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400" : "no-store",
       "x-upstream-url": `${API_BASE}${upstreamPath}`,
       "x-upstream-ms": String(r.ms),
       "x-cache": r.cached ? "HIT" : "MISS",

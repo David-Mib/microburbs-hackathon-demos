@@ -116,7 +116,7 @@ export function LineChart({
             <g pointerEvents="none">
               <line x1={x(hoverT!)} x2={x(hoverT!)} y1={M.top} y2={M.top + ih} stroke="var(--color-ink)" strokeOpacity={0.25} />
               {readout.map(({ s, p }) => (
-                <circle key={s.name} cx={x(p.t)} cy={y(p.v)} r={4} fill={s.color} stroke="#fff" strokeWidth={2} />
+                <circle key={s.name} cx={x(p.t)} cy={y(p.v)} r={4} fill={s.color} stroke="var(--card)" strokeWidth={2} />
               ))}
             </g>
           )}

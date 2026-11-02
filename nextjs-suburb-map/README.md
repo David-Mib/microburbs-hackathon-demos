@@ -1,25 +1,39 @@
-# City of Sydney explorer (Next.js)
+# Microburbs API demos (Next.js)
 
 A Next.js app (App Router, TypeScript) built on the Microburbs Hackathon API. It covers all 29 suburbs of the
-City of Sydney and every address in them, across eight pages. Every page has a request inspector beside it
-that lists the API calls it made. For each call you can see the URL, the status, how long it took and the
-JSON that came back, and copy the same request as curl, JavaScript or Python.
+City of Sydney and every address in them: suburb reports, a listings portal, heat maps, crime, property profiles
+and more. Dark mode by default with a light toggle; every map sits on a real base map.
 
-![The city map: every mesh block of the City of Sydney coloured by household income](docs/screenshot.png)
+Every page has an **API calls** panel beside it (hide it and it stays hidden until you reopen it). It lists the
+calls the page made: the URL, the status, how long it took and the JSON that came back, and the same request as
+curl, JavaScript or Python.
 
-| Page        | What it shows | Main endpoints |
-|-------------|---------------|----------------|
-| `/city`     | All 29 suburbs on one map, every mesh block coloured by income, house price, rent, yield, renters, vacancy, livability or crime, with a suburb league table | `suburbs/list`, `shapes/mesh-blocks`, `shapes/boundary`, `demographics/income-map`, `market/median-price-map`, `market/rent-map`, `market/yield-map`, `demographics/tenure`, `market/vacancy-map`, `lifestyle/livability-map`, `crime/by-mesh-block` |
-| `/crime`    | A suburb against the national crime rate, the offences behind it, and the rate block by block | `crime/summary`, `crime/breakdown`, `crime/by-mesh-block`, `lifestyle/livability` |
-| `/map`      | The same block-level layers as `/city`, for one suburb, with its highest and lowest blocks | the `/city` layers |
-| `/market`   | Price, rent, yield and vacancy history for houses and units, past growth, the forecast range and the latest sales | `market/*-series`, `market/price-growth`, `forecast/sale`, `market/days-on-market`, `sales/recent` |
-| `/property` | Address search, then the valuation and its range, value over time, the street against the suburb, sale and rental history, recent sales nearby on a map, hazards, transport and schools | `geocode/address`, `properties/{gnaf_id}/basics/all`, `valuation/avm`, `valuation/value-series`, `history/all`, `street/profile`, `comparables/recent-sales-nearby`, `risks/all`, `transport/nearby`, `schools/ranking`, `profile` |
-| `/compare`  | All 29 suburbs in one sortable table: prices, rents, yields, five-year growth, days on market and crime | `suburbs/list`, `market/all`, `crime/summary` |
-| `/search`   | Suburb type-ahead, then a snapshot: livability, what the suburb is like, amenities, age and income, and its neighbours | `geocode/suburb`, `hero/summary`, `lifestyle/*`, `demographics/all`, `hero/neighbours` |
-| `/finder`   | Rank the suburbs on any of 46 fields, filter by ranges, and see the ranking on a map | `suburbs/finder/fields`, `suburbs/finder/search`, `suburbs/finder/count` |
+Live: <https://microburbs-api-demos.vercel.app>
+
+| Page | What it shows |
+|------|---------------|
+| `/` | Universal search: type a suburb or an address, go straight to its page (`suburbs/list`, `geocode/suburb`, `geocode/address`) |
+| `/suburbs`, `/suburbs/{name}` | A one-page report per suburb: market, prices and rents over time, demographics, crime, schools, lifestyle, risks, development |
+| `/listings`, `/listings/{gnaf_id}` | For sale, for rent and sold, with filters, a map view and a page per listing (`listings/for-sale`, `listings/for-rent`, `sales/recent`, property endpoints) |
+| `/heatmaps` | The whole city as heat maps: ancestry and birthplace by suburb, income, prices, rents, yields, vacancy, livability and crime by block |
+| `/crime` | A suburb against the national crime rate, the offences behind it, and the rate block by block |
+| `/property` | Any address: valuation and range, value over time, its street, history, nearby sales, hazards, transport, schools |
+| `/market` | Price, rent, yield and vacancy history for houses and units, growth, the forecast range and the latest sales |
+| `/compare` | All 29 suburbs in one sortable table |
+| `/finder` | Rank the suburbs on any of 46 fields, filter by ranges, see the ranking on a map |
+| `/map` | Every block of one suburb on any layer |
 
 Suburb endpoints are `/v1/suburbs/{name}/...` and property endpoints are `/v1/properties/{gnaf_id}/...`. The
 full reference is at <https://api-ht.microburbs.com.au/docs>.
+
+## Two ways a page gets data
+
+- **On the server** (suburb reports, listings): the page is a server component that calls
+  `api(path)` from [`src/lib/server/microburbs.ts`](src/lib/server/microburbs.ts), fetching in parallel with
+  `Promise.all`, and renders complete HTML. `export const revalidate = 3600` caches the rendered page for an
+  hour. It hands the call records to `<ServerCalls calls={...} />` so the API panel can list them.
+- **In the browser** (maps you switch between, search as you type): a client component calls `useApi(path)`,
+  which fetches this app's own `/api/mb/v1/...` route. That route adds the key on the server.
 
 ## Run it
 
@@ -59,7 +73,8 @@ use that route with your key, so put your own login in front of it first.
 Each key gets about 10 requests a second. The server-side client:
 
 - sends at most 8 requests a second, and waits and retries when the API answers `429`;
-- caches successful answers in memory for an hour, so a reload is instant and costs no requests;
+- caches successful answers in memory and in Next's data cache for an hour;
+- marks `/api/mb` answers cacheable (`s-maxage=3600`), so on Vercel the CDN answers repeats without a call;
 - shares one upstream call when two requests for the same path arrive together.
 
 The browser also sends no more than 6 requests to the app at once. The first visit to `/city` makes 88
@@ -87,24 +102,31 @@ their data arrives. After that, the page loads from the cache.
 src/
   app/
     api/mb/[...path]/route.ts   the only place the browser's requests leave the app
-    page.tsx                    index of the demos
-    city/ crime/ map/ market/ property/ compare/ search/ finder/
+    page.tsx                    homepage with the universal search
+    suburbs/ listings/ heatmaps/ crime/ property/ market/ compare/ finder/ map/
   components/
-    Inspector.tsx               the request inspector
-    ChoroplethMap.tsx           GeoJSON to SVG, with no map library
+    Inspector.tsx               the API calls panel (collapsible, remembered)
+    ChoroplethMap.tsx           GeoJSON over a MapLibre base map, coloured by value
+    UniversalSearch.tsx         one box for suburbs and addresses
     LineChart.tsx               SVG time series
     PageShell.tsx               page frame, panels, loading and empty states
   lib/
-    server/microburbs.ts        server-only API client: key, pacing, retries, cache
+    server/microburbs.ts        server-only API client: api(path), key, pacing, retries, cache
     api-store.tsx               useApi(path): fetches through /api/mb and logs each call for the inspector
     api.ts                      paths, response types, curl/JS/Python snippets
     layers.ts                   the block-level map layers
-    pages.ts                    the demo list (nav and index), plus the "More demos" links
+    pages.ts                    the demo list (nav and homepage), plus the "More demos" links
+    theme.ts                    dark/light theme and the API panel state
 ```
 
 To add a page, add an entry to `src/lib/pages.ts` and create `src/app/<slug>/page.tsx`. In the page,
 render `<PageShell slug="<slug>">` and fetch with `useApi("/v1/...")`. Wrap each block in
 `<Panel calls={[result.call]}>` so its calls are linked to the inspector.
 
-The maps and charts are plain SVG, so the only runtime dependencies are Next.js, React and `server-only`.
-Styling uses Tailwind CSS v4.
+Maps use [MapLibre GL](https://maplibre.org) over free [OpenFreeMap](https://openfreemap.org) base maps
+(OpenStreetMap data, no key, commercial use allowed with attribution). Charts are plain SVG. Styling is
+Tailwind CSS v4 with CSS-variable tokens for the dark and light themes (`src/app/globals.css`). The functions
+run in Vercel's Sydney region (`vercel.json`), next to the API.
+
+Listing photos are free Pexels stock images in `public/photos`, chosen per listing and marked "Sample photo":
+the API does not return listing photos.

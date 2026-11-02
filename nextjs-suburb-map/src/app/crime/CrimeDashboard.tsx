@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { ChoroplethMap, RAMPS } from "@/components/ChoroplethMap";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { ChoroplethMap, RAMPS, rampFor } from "@/components/ChoroplethMap";
 import { Failed, NoData, PageShell, Panel, Pending } from "@/components/PageShell";
 import { SuburbSelect } from "@/components/Pickers";
-import { EXAMPLE_SUBURB, shortName, suburbPath } from "@/lib/api";
-import { useApi } from "@/lib/api-store";
-import { useSuburbShapes } from "@/lib/area";
+import { EXAMPLE_SUBURB, shortName, suburbHref, suburbPath } from "@/lib/api";
+import { useApi, useApis } from "@/lib/api-store";
+import { useSuburbList, useSuburbShapes } from "@/lib/area";
 import { int } from "@/lib/format";
+import { useTheme } from "@/lib/theme";
 import { useQueryParam } from "@/lib/use-query-param";
 
 type Summary = {
@@ -28,31 +30,44 @@ type Livability = {
 };
 
 /**
- * The dashboard is a list of panels. Each one takes the suburb and fetches
- * what it needs, so a new endpoint (block-level rent, crime by type per
- * block, …) is one more component and one more line here.
+ * Crime for one suburb: the verdict against the national rate, where it ranks
+ * in the City of Sydney, which offences drive it, and which blocks carry it.
+ * Each panel takes the suburb and fetches what it needs, so adding a view is
+ * one more component. `?suburb=` picks the suburb, so other pages can link here.
  */
-const PANELS: { key: string; wide?: boolean; Component: (p: { suburb: string }) => React.ReactNode }[] = [
-  { key: "headline", Component: HeadlinePanel },
-  { key: "safety", Component: SafetyPanel },
-  { key: "breakdown", wide: true, Component: BreakdownPanel },
-  { key: "blocks", wide: true, Component: BlockMapPanel },
-];
-
 export function CrimeDashboard() {
   const [suburb, setSuburb] = useQueryParam("suburb", EXAMPLE_SUBURB);
   return (
-    <PageShell slug="crime" controls={<SuburbSelect value={suburb} onChange={setSuburb} />}>
-      <div className="grid gap-4 md:grid-cols-2">
-        {PANELS.map(({ key, wide, Component }) => (
-          <div key={`${key}-${suburb}`} className={wide ? "md:col-span-2" : ""}>
-            <Component suburb={suburb} />
-          </div>
-        ))}
+    <PageShell
+      slug="crime"
+      controls={
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <SuburbSelect value={suburb} onChange={setSuburb} />
+          <Link href={suburbHref(suburb)} className="text-[14px] text-brand-deep hover:underline">
+            Full suburb report →
+          </Link>
+        </div>
+      }
+    >
+      <div key={suburb} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="md:col-span-2 xl:col-span-2">
+          <HeadlinePanel suburb={suburb} />
+        </div>
+        <SafetyPanel suburb={suburb} />
+        <div className="md:col-span-2 xl:col-span-3">
+          <BlockMapPanel suburb={suburb} />
+        </div>
+        <div className="md:col-span-2 xl:col-span-2">
+          <BreakdownPanel suburb={suburb} />
+        </div>
+        <CityRankPanel suburb={suburb} onPick={setSuburb} />
       </div>
     </PageShell>
   );
 }
+
+const verdictTone = (v: string) =>
+  /high/i.test(v) ? "text-bad" : /low/i.test(v) ? "text-ok-deep" : "text-warn";
 
 function HeadlinePanel({ suburb }: { suburb: string }) {
   const { data, call, loading, error } = useApi<Summary>(suburbPath(suburb, "crime/summary"));
@@ -60,17 +75,27 @@ function HeadlinePanel({ suburb }: { suburb: string }) {
   return (
     <Panel title="Against the national rate" calls={[call]} className="h-full">
       {loading ? (
-        <Pending height={150} />
+        <Pending height={170} />
       ) : error ? (
         <Failed message={error} />
       ) : !data ? (
         <NoData />
       ) : (
         <div>
-          <p className="text-[30px] font-semibold leading-none tracking-[-0.02em]">{data.verdict}</p>
-          <p className="mt-3 text-[15px] leading-[1.5] text-slate">
-            {label} runs at <strong className="text-ink">{int(data.suburb_median)}</strong> incidents per 100,000
-            residents a year,{" "}
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+            <p className={`text-[44px] font-semibold leading-none tracking-[-0.03em] ${verdictTone(data.verdict)}`}>
+              {data.verdict}
+            </p>
+            <p className="pb-1 text-[15px] text-slate">
+              <span className="text-[22px] font-semibold tabular-nums text-ink">
+                {(data.suburb_median / data.national_median).toFixed(1)}×
+              </span>{" "}
+              the national median
+            </p>
+          </div>
+          <p className="mt-3 max-w-[60ch] text-[15px] leading-[1.55] text-slate">
+            {label} runs at <strong className="text-ink">{int(data.suburb_median)}</strong> predicted incidents per
+            100,000 residents a year,{" "}
             {data.vs_national_pct === 0
               ? "level with"
               : `${Math.abs(data.vs_national_pct)}% ${data.vs_national_pct > 0 ? "above" : "below"}`}{" "}
@@ -85,19 +110,25 @@ function HeadlinePanel({ suburb }: { suburb: string }) {
 
 /** Two markers on one axis: this suburb and the national median. */
 function RateScale({ suburb, national }: { suburb: number; national: number }) {
-  const max = Math.max(suburb, national) * 1.25;
+  const theme = useTheme();
+  const heat = rampFor(RAMPS.heat, theme);
+  const green = rampFor(RAMPS.green, theme);
+  const max = Math.max(suburb, national) * 1.15;
   const at = (v: number) => `${(v / max) * 100}%`;
   const above = suburb > national;
   return (
-    <div className="mt-6 pb-8">
-      <div className="relative h-2 rounded-full bg-ink/[.06]">
+    <div className="mt-6 pb-7">
+      <div className="relative h-2.5 rounded-full bg-ink/[.07]">
         <div
           className="absolute inset-y-0 left-0 rounded-full"
-          style={{ width: at(suburb), background: above ? RAMPS.heat[3] : RAMPS.green[3] }}
+          style={{
+            width: at(suburb),
+            background: above ? `linear-gradient(90deg, ${heat[1]}, ${heat[3]})` : green[3],
+          }}
         />
-        <div className="absolute -top-1.5 h-5 w-0.5 bg-ink" style={{ left: at(national) }} />
+        <div className="absolute -top-1.5 h-[22px] w-[3px] -translate-x-1/2 rounded-full bg-ink" style={{ left: at(national) }} />
         <div
-          className="absolute top-5 -translate-x-1/2 whitespace-nowrap text-[12px] text-slate"
+          className="absolute top-6 -translate-x-1/2 whitespace-nowrap text-[12px] text-slate"
           style={{ left: at(national) }}
         >
           National {int(national)}
@@ -112,25 +143,20 @@ function SafetyPanel({ suburb }: { suburb: string }) {
   const safety = data?.scores.find((s) => s.key === "safety");
   const region = data?.benchmark.scores.safety;
   return (
-    <Panel
-      title="Safety score"
-      note="0 to 100, higher means less predicted crime."
-      calls={[call]}
-      className="h-full"
-    >
+    <Panel title="Safety score" note="0 to 100; higher means less predicted crime." calls={[call]} className="h-full">
       {loading ? (
-        <Pending height={120} />
+        <Pending height={150} />
       ) : error ? (
         <Failed message={error} />
       ) : !safety ? (
         <NoData />
       ) : (
-        <div className="flex items-end gap-6">
+        <div className="flex flex-col items-center gap-3 pt-1 text-center">
           <Dial value={safety.value} />
-          <div className="pb-2 text-[15px] leading-[1.5]">
+          <div className="text-[15px] leading-[1.5]">
             <p className="font-semibold">{safety.level}</p>
             {region != null && (
-              <p className="text-slate">
+              <p className="text-[13.5px] text-slate">
                 The {data!.benchmark.n_suburbs} suburbs of {data!.benchmark.region} average {Math.round(region)}.
               </p>
             )}
@@ -142,65 +168,88 @@ function SafetyPanel({ suburb }: { suburb: string }) {
 }
 
 function Dial({ value }: { value: number }) {
-  const r = 44;
+  const theme = useTheme();
+  const heat = rampFor(RAMPS.heat, theme);
+  const green = rampFor(RAMPS.green, theme);
+  const r = 58;
   const c = Math.PI * r;
-  const colour = value >= 60 ? RAMPS.green[3] : value >= 40 ? RAMPS.heat[2] : RAMPS.heat[3];
+  const colour = value >= 60 ? green[3] : value >= 40 ? heat[2] : heat[3];
   return (
-    <svg width="120" height="70" viewBox="0 0 120 70" role="img" aria-label={`Safety ${value} out of 100`}>
-      <path d={`M16,62 A${r},${r} 0 0 1 104,62`} fill="none" stroke="var(--color-line)" strokeWidth="10" strokeLinecap="round" />
+    <svg width="160" height="92" viewBox="0 0 160 92" role="img" aria-label={`Safety ${value} out of 100`}>
+      <path d={`M22,82 A${r},${r} 0 0 1 138,82`} fill="none" stroke="var(--line)" strokeWidth="12" strokeLinecap="round" />
       <path
-        d={`M16,62 A${r},${r} 0 0 1 104,62`}
+        d={`M22,82 A${r},${r} 0 0 1 138,82`}
         fill="none"
         stroke={colour}
-        strokeWidth="10"
+        strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={`${(value / 100) * c} ${c}`}
       />
-      <text x="60" y="60" textAnchor="middle" className="fill-ink text-[26px] font-semibold">
+      <text x="80" y="78" textAnchor="middle" fill="var(--ink)" className="text-[34px] font-semibold">
         {value}
       </text>
     </svg>
   );
 }
 
+/** Each offence type: the suburb's rate against the national median, as paired bars. */
 function BreakdownPanel({ suburb }: { suburb: string }) {
+  const theme = useTheme();
+  const heat = rampFor(RAMPS.heat, theme);
+  const green = rampFor(RAMPS.green, theme);
   const { data, call, loading, error } = useApi<Breakdown>(suburbPath(suburb, "crime/breakdown"));
   const rows = data?.breakdown ?? [];
   const max = Math.max(1, ...rows.flatMap((r) => [r.rate, r.national_median]));
   return (
     <Panel
       title="What drives it"
-      note="Each offence type per 100,000 residents a year. The black tick is the national median."
+      note="Each offence type, predicted incidents per 100,000 residents a year."
       calls={[call]}
+      action={
+        <div className="hidden shrink-0 items-center gap-4 pt-1 text-[12px] text-slate sm:flex">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-4 rounded-full" style={{ background: heat[3] }} />
+            {shortName(suburb)}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-4 rounded-full bg-slate/50" />
+            National median
+          </span>
+        </div>
+      }
     >
       {loading ? (
-        <Pending height={260} />
+        <Pending height={280} />
       ) : error ? (
         <Failed message={error} />
       ) : !rows.length ? (
         <NoData />
       ) : (
-        <ul className="grid gap-3">
+        <ul className="grid gap-3.5">
           {rows.map((r) => {
-            const above = r.diff_pct > 0;
+            const above = r.rate > r.national_median;
+            const times = r.national_median ? r.rate / r.national_median : NaN;
             return (
-              <li key={r.type} className="grid grid-cols-[92px_1fr_auto] items-center gap-3 sm:grid-cols-[140px_1fr_96px]">
+              <li key={r.type} className="grid grid-cols-[100px_1fr_92px] items-center gap-3 sm:grid-cols-[130px_1fr_120px]">
                 <span className="text-[14px]">{r.label}</span>
-                <div className="relative h-3.5 rounded-sm bg-ink/[.05]">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-sm"
-                    style={{
-                      width: `${(r.rate / max) * 100}%`,
-                      background: above ? RAMPS.heat[r.diff_pct > 50 ? 4 : 3] : RAMPS.green[3],
-                    }}
-                  />
-                  <div className="absolute -inset-y-1 w-0.5 bg-ink" style={{ left: `${(r.national_median / max) * 100}%` }} />
+                <div className="grid gap-1">
+                  <div className="h-2.5 rounded-full bg-ink/[.05]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${(r.rate / max) * 100}%`,
+                        background: above ? heat[3] : green[3],
+                      }}
+                    />
+                  </div>
+                  <div className="h-1.5 rounded-full bg-ink/[.03]">
+                    <div className="h-full rounded-full bg-slate/50" style={{ width: `${(r.national_median / max) * 100}%` }} />
+                  </div>
                 </div>
                 <span className="text-right text-[13px] tabular-nums">
                   <span className="font-semibold">{int(r.rate)}</span>{" "}
-                  <span className={above ? "text-warn" : "text-[#1b6450]"}>
-                    {r.diff_pct > 0 ? "+" : ""}
-                    {r.diff_pct}%
+                  <span className={above ? "text-warn" : "text-ok-deep"}>
+                    {Number.isFinite(times) ? `${times.toFixed(1)}×` : ""}
                   </span>
                 </span>
               </li>
@@ -212,11 +261,91 @@ function BreakdownPanel({ suburb }: { suburb: string }) {
   );
 }
 
+/** Where the suburb sits among the 29: one crime/summary call per suburb (cached). */
+function CityRankPanel({ suburb, onPick }: { suburb: string; onPick: (s: string) => void }) {
+  const theme = useTheme();
+  const heat = rampFor(RAMPS.heat, theme);
+  const { names, call: listCall } = useSuburbList();
+  const results = useApis<Summary>(names.map((n) => suburbPath(n, "crime/summary")));
+  const [all, setAll] = useState(false);
+  const ranked = names
+    .map((name, i) => ({ name, rate: results[i]?.data?.suburb_median }))
+    .filter((r): r is { name: string; rate: number } => typeof r.rate === "number")
+    .sort((a, b) => b.rate - a.rate);
+  const pos = ranked.findIndex((r) => r.name === suburb);
+  const max = ranked[0]?.rate ?? 1;
+  const loading = results.some((r) => r.loading) || !names.length;
+  // Show the top five, the bottom three and the suburb with its neighbours.
+  const keep = new Set<number>([0, 1, 2, 3, 4, ranked.length - 3, ranked.length - 2, ranked.length - 1, pos - 1, pos, pos + 1]);
+  const rows = ranked.map((r, i) => (all || keep.has(i) ? { ...r, i } : null));
+
+  return (
+    <Panel
+      title="Across the City of Sydney"
+      note={
+        pos >= 0
+          ? `${shortName(suburb)} ranks ${ordinal(pos + 1)} of ${ranked.length} suburbs, highest crime first.`
+          : "Every suburb's predicted rate, highest first."
+      }
+      calls={[listCall, ...results.map((r) => r.call)]}
+      className="h-full"
+    >
+      {!ranked.length && loading ? (
+        <Pending height={300} />
+      ) : (
+        <>
+          <ol className="grid gap-0.5 text-[13px]">
+            {rows.map((r, i) =>
+              r ? (
+                <li key={r.name}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(r.name)}
+                    className={`grid w-full grid-cols-[22px_1fr_auto] items-center gap-2 rounded-md px-1 py-1 text-left ${
+                      r.name === suburb ? "bg-brand-wash" : "hover:bg-ink/[.04]"
+                    }`}
+                  >
+                    <span className="text-right font-mono text-[10.5px] text-faint">{r.i + 1}</span>
+                    <span className="min-w-0">
+                      <span className={`block truncate ${r.name === suburb ? "font-semibold" : ""}`}>{shortName(r.name)}</span>
+                      <span className="mt-1 block h-[3px] rounded-full bg-ink/[.06]">
+                        <span
+                          className="block h-full rounded-full"
+                          style={{ width: `${(r.rate / max) * 100}%`, background: heat[r.name === suburb ? 4 : 2] }}
+                        />
+                      </span>
+                    </span>
+                    <span className="tabular-nums">{int(r.rate)}</span>
+                  </button>
+                </li>
+              ) : rows[i - 1] ? (
+                <li key={`gap-${i}`} className="py-0.5 text-center text-[12px] tracking-[.3em] text-faint">
+                  ···
+                </li>
+              ) : null,
+            )}
+          </ol>
+          <button
+            type="button"
+            onClick={() => setAll(!all)}
+            className="mt-3 w-full rounded-lg border border-line py-1.5 text-[12.5px] text-slate hover:text-ink"
+          >
+            {all ? "Show fewer" : `Show all ${ranked.length}`}
+          </button>
+        </>
+      )}
+    </Panel>
+  );
+}
+
 function BlockMapPanel({ suburb }: { suburb: string }) {
   const { data, call, loading, error } = useApi<ByBlock>(suburbPath(suburb, "crime/by-mesh-block"));
   const shapes = useSuburbShapes(suburb);
   const values = useMemo(() => new Map(Object.entries(data?.mesh_blocks ?? {})), [data]);
-  const hottest = [...values.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const sorted = [...values.values()].sort((a, b) => a - b);
+  const mid = sorted[Math.floor(sorted.length / 2)];
+  const p90 = sorted[Math.floor(sorted.length * 0.9)];
+  const hot = sorted.filter((v) => v >= p90).length;
 
   return (
     <Panel
@@ -228,13 +357,13 @@ function BlockMapPanel({ suburb }: { suburb: string }) {
       calls={[call, ...shapes.calls]}
     >
       {loading || shapes.loading ? (
-        <Pending height={380} />
+        <Pending height={520} />
       ) : error || shapes.error ? (
         <Failed message={(error ?? shapes.error)!} />
       ) : !shapes.shapes || !values.size ? (
         <NoData />
       ) : (
-        <>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
           <ChoroplethMap
             shapes={shapes.shapes.features}
             outlines={shapes.boundary ? [{ id: suburb, feature: shapes.boundary }] : []}
@@ -243,18 +372,35 @@ function BlockMapPanel({ suburb }: { suburb: string }) {
             ramp={RAMPS.heat}
             legend="Predicted incidents per 100,000 residents a year"
             caption={`Crime rate by mesh block in ${shortName(suburb)}`}
+            maxHeight={540}
           />
-          <p className="mt-4 text-[14px] leading-[1.5] text-slate">
-            {values.size} blocks. The three highest run at {hottest.map(([, v]) => int(v)).join(", ")}, against a
-            suburb median of {int(median([...values.values()]))}.
-          </p>
-        </>
+          <dl className="grid content-start gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            <Fact label="Blocks mapped" value={int(values.size)} />
+            <Fact label="Middle block" value={int(mid)} sub="incidents per 100,000 a year" />
+            <Fact
+              label="Hottest tenth"
+              value={`${int(p90)}+`}
+              sub={`${hot} blocks at or above this rate`}
+            />
+          </dl>
+        </div>
       )}
     </Panel>
   );
 }
 
-function median(v: number[]) {
-  const s = [...v].sort((a, b) => a - b);
-  return s.length ? s[Math.floor(s.length / 2)] : NaN;
+function Fact({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-line bg-ink/[.02] px-4 py-3">
+      <dt className="text-[12.5px] text-slate">{label}</dt>
+      <dd className="mt-1 text-[22px] font-semibold tabular-nums leading-none tracking-[-0.02em]">{value}</dd>
+      {sub && <dd className="mt-1.5 text-[12px] leading-[1.35] text-faint">{sub}</dd>}
+    </div>
+  );
 }
+
+const ordinal = (n: number) => {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};

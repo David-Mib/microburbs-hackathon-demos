@@ -11,13 +11,13 @@ export function SuburbSelect({ value, onChange }: { value: string; onChange: (na
   const { names, loading } = useSuburbList();
   const options = names.includes(value) || !value ? names : [value, ...names];
   return (
-    <label className="inline-flex items-center gap-3 text-[14px] font-medium">
-      Suburb
+    <label className="relative inline-flex items-center gap-3 text-[14px] font-medium">
+      <span className="text-slate">Suburb</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={loading && !names.length}
-        className="min-w-[240px] rounded-lg border border-line bg-card px-3 py-2 text-[15px] font-normal outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+        className="min-w-[240px] cursor-pointer appearance-none rounded-xl border border-line bg-card py-2.5 pl-3.5 pr-10 text-[15px] font-medium text-ink shadow-card outline-none transition hover:border-brand/40 focus:border-brand focus:ring-4 focus:ring-brand/15"
       >
         {options.map((n) => (
           <option key={n} value={n}>
@@ -26,6 +26,18 @@ export function SuburbSelect({ value, onChange }: { value: string; onChange: (na
         ))}
         {!options.length && <option value={value}>{value}</option>}
       </select>
+      <svg
+        className="pointer-events-none absolute right-3.5 text-faint"
+        width="14"
+        height="14"
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        aria-hidden="true"
+      >
+        <path d="M3 4.5l3 3 3-3" />
+      </svg>
     </label>
   );
 }
@@ -65,12 +77,12 @@ export function Choices({
                 size === "sm" ? "px-3 py-1 text-[13px]" : "px-3.5 py-1.5 text-[14px]"
               } ${
                 on
-                  ? "border-ink bg-ink text-white"
+                  ? "border-ink bg-ink text-on-ink"
                   : "border-line bg-card text-ink hover:border-ink/40"
               }`}
             >
               {o.label}
-              {o.hint && <span className={`text-[11px] ${on ? "text-white/60" : "text-faint"}`}>{o.hint}</span>}
+              {o.hint && <span className={`text-[11px] ${on ? "text-on-ink/60" : "text-faint"}`}>{o.hint}</span>}
             </button>
           );
         })}

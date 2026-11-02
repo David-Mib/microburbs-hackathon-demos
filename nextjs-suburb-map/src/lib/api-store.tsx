@@ -29,11 +29,24 @@ export type Call = {
   size?: number;
   body?: unknown;
   error?: string;
+  /** Made by the server while rendering the page (the body loads on demand). */
+  server?: boolean;
+};
+
+/** What a server component reports about a call it made (see lib/server/microburbs.ts). */
+export type ServerCallInfo = {
+  path: string;
+  url: string;
+  status: number;
+  ms: number;
+  size: number;
+  requestId: string | null;
+  error?: string;
 };
 
 type Snapshot = { calls: Call[]; selected: number | null; sheetOpen: boolean };
 
-const MAX_IN_FLIGHT = 6;
+const MAX_IN_FLIGHT = 12;
 const EMPTY: Snapshot = { calls: [], selected: null, sheetOpen: false };
 
 class ApiStore {
@@ -67,6 +80,49 @@ class ApiStore {
     this.set({ selected: id, sheetOpen: openSheet || this.snap.sheetOpen });
   };
   setSheet = (open: boolean) => this.set({ sheetOpen: open });
+
+  /** List calls the server already made for this page. */
+  seed = (calls: ServerCallInfo[]) => {
+    const fresh = calls.filter((c) => !this.byPath.has(c.path));
+    if (!fresh.length) return;
+    const added: Call[] = fresh.map((c) => {
+      const id = this.nextId++;
+      this.byPath.set(c.path, id);
+      return {
+        id,
+        path: c.path,
+        url: c.url,
+        state: c.status >= 200 && c.status < 300 ? "done" : "error",
+        status: c.status,
+        ms: c.ms,
+        size: c.size,
+        requestId: c.requestId,
+        error: c.error,
+        server: true,
+      };
+    });
+    this.set({ calls: [...added.reverse(), ...this.snap.calls], selected: this.snap.selected ?? added[0]?.id ?? null });
+  };
+
+  /** Fetch the body of a server-made call so the inspector can show it. */
+  private loading = new Set<number>();
+  loadBody = (id: number) => {
+    const call = this.snap.calls.find((c) => c.id === id);
+    if (!call || call.body !== undefined || this.loading.has(id)) return;
+    this.loading.add(id);
+    fetch(`/api/mb${call.path}`)
+      .then((r) => r.text())
+      .then((text) => {
+        let body: unknown = text;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          /* keep the text */
+        }
+        this.patch(id, { body });
+      })
+      .catch(() => this.patch(id, { body: "Could not load the response." }));
+  };
 
   /** Start `path` unless it has already been asked for. Returns its call id. */
   ensure = (path: string): number => {
@@ -154,7 +210,7 @@ function useStore() {
 export function useApiLog() {
   const store = useStore();
   const snap = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
-  return { ...snap, select: store.select, setSheet: store.setSheet };
+  return { ...snap, select: store.select, setSheet: store.setSheet, loadBody: store.loadBody };
 }
 
 export type ApiResult<T> = {
@@ -215,4 +271,18 @@ function toResult<T>(calls: Call[], path: string | null): ApiResult<T> {
     error: call?.state === "error" ? (call.error ?? "Request failed") : null,
     message: body && body.data == null ? (body.message ?? "The API has no figure for this.") : null,
   };
+}
+
+/**
+ * Put the calls a server component made into this page's inspector. Render it
+ * anywhere on the page: <ServerCalls calls={calls} />.
+ */
+export function ServerCalls({ calls }: { calls: ServerCallInfo[] }) {
+  const store = useStore();
+  const key = calls.map((c) => c.path).join("\n");
+  useEffect(() => {
+    store.seed(calls);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, store]);
+  return null;
 }
