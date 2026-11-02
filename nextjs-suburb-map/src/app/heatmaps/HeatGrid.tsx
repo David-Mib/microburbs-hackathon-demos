@@ -95,7 +95,7 @@ export function HeatGrid({
                       color: bg ? ((theme === "dark" ? t > 0.55 : t <= 0.55) ? "#0b0f19" : "#ffffff") : "var(--faint)",
                     }}
                   >
-                    {v != null ? (v * 100).toFixed(v < 0.1 ? 1 : 0) : "·"}
+                    {v != null ? `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%` : "·"}
                   </td>
                 );
               })}

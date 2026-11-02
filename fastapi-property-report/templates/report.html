@@ -204,7 +204,7 @@
   // (static/input.css) darkens the tiles. Fine for a demo; for real traffic use a tile provider, as
   // OSM's tile usage policy asks.
   const d = JSON.parse(document.getElementById("map-data").textContent);
-  const map = L.map("map", { scrollWheelZoom: false }).setView(d.centre, 16);
+  const map = L.map("map").setView(d.centre, 16);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);

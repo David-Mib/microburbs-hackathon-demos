@@ -285,7 +285,6 @@ function MapCanvas({
         zoom: 12,
         // The tiles carry their own attribution (OpenFreeMap, OpenMapTiles, OpenStreetMap).
         attributionControl: { compact: true },
-        cooperativeGestures: true,
         dragRotate: false,
         pitchWithRotate: false,
       });
@@ -390,8 +389,11 @@ function addLayers(m: MlMap, data: MapData, theme: Theme, opacity: number) {
   for (const k of ["blocks", "outlines", "labels", "markers"] as const) {
     if (!m.getSource(k)) m.addSource(k, { type: "geojson", data: data[k] });
   }
-  // Our fills go under the base map's labels, so street and place names stay readable.
-  const firstLabel = m.getStyle().layers.find((l) => l.type === "symbol")?.id;
+  // Our fills go above the base map's buildings (which would otherwise black out the
+  // middle of a dense suburb) and under its roads and labels, so streets stay readable.
+  const layers = m.getStyle().layers;
+  const lastBuilding = layers.map((l) => l.id).findLastIndex((id) => /building/.test(id));
+  const firstLabel = layers.slice(lastBuilding + 1).find((l) => l.type === "symbol" || l.type === "line")?.id;
   m.addLayer({
     id: "blocks-fill",
     type: "fill",
