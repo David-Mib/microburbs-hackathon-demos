@@ -97,7 +97,7 @@ const cachedFetch = unstable_cache(
     if (r.status < 200 || r.status >= 300) throw new UpstreamError(r);
     return r;
   },
-  ["microburbs-upstream-v1"],
+  ["microburbs-upstream-v2"],
   { revalidate: REVALIDATE_SECONDS },
 );
 
