@@ -21,16 +21,19 @@ Routes
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, quote, urlencode
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -42,6 +45,57 @@ HERE = Path(__file__).parent
 app = FastAPI(title="Property Report", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
 templates = Jinja2Templates(directory=HERE / "templates")
+
+# --------------------------------------------------------------------------
+# Password gate. DEMO_GATE=on turns it on, with the password in DEMO_PASSWORD;
+# off or unset leaves the site open, so a local copy runs as before. On with no
+# password lets nobody in.
+# --------------------------------------------------------------------------
+
+GATE_ON = os.environ.get("DEMO_GATE", "off").strip().lower() == "on"
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "")
+GATE_COOKIE = "demo_gate"
+GATE_OPEN = {"/login", "/favicon.ico"}
+
+
+def gate_token(password: str) -> str:
+    return hashlib.sha256(f"demo-gate:{password}".encode()).hexdigest()
+
+
+def safe_next(target: str) -> str:
+    """Only send people back to a page on this site."""
+    return target if target.startswith("/") and not target.startswith("//") else "/"
+
+
+@app.middleware("http")
+async def password_gate(request: Request, call_next):
+    path = request.url.path
+    if not GATE_ON or path in GATE_OPEN or path.startswith("/static/"):
+        return await call_next(request)
+    if DEMO_PASSWORD and hmac.compare_digest(request.cookies.get(GATE_COOKIE, ""), gate_token(DEMO_PASSWORD)):
+        return await call_next(request)
+    if request.headers.get("HX-Request"):  # an htmx partial: send the whole page to the login
+        return Response(status_code=401, headers={"HX-Redirect": "/login"})
+    target = path + (f"?{request.url.query}" if request.url.query else "")
+    return RedirectResponse(f"/login?next={quote(target)}", status_code=303)
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request, next: str = "/", error: str = ""):
+    return templates.TemplateResponse(request, "login.html", {"next": safe_next(next), "error": bool(error)})
+
+
+@app.post("/login")
+async def login(request: Request):
+    form = parse_qs((await request.body()).decode())
+    password = form.get("password", [""])[0]
+    target = safe_next(form.get("next", ["/"])[0])
+    if not DEMO_PASSWORD or not hmac.compare_digest(password.encode(), DEMO_PASSWORD.encode()):
+        return RedirectResponse(f"/login?error=1&next={quote(target)}", status_code=303)
+    response = RedirectResponse(target, status_code=303)
+    response.set_cookie(GATE_COOKIE, gate_token(DEMO_PASSWORD), max_age=30 * 24 * 3600,
+                        httponly=True, secure=True, samesite="lax")
+    return response
 
 # The property endpoints that make up one report. Each is one API call.
 PROPERTY_ENDPOINTS = [

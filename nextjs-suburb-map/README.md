@@ -68,6 +68,12 @@ The fetch code is in [`src/lib/server/microburbs.ts`](src/lib/server/microburbs.
 The route only forwards `GET` requests under `/v1/`. If you deploy the app somewhere public, anyone could
 use that route with your key, so put your own login in front of it first.
 
+## Password gate
+
+Set `DEMO_GATE=on` and `DEMO_PASSWORD=<a password>` to put the whole app behind a password: visitors see
+**Enter your password** first, and the data route answers 401 until they have. `DEMO_GATE=off` (or unset)
+leaves the app open, which is how it runs locally. The check is in [`src/proxy.ts`](src/proxy.ts).
+
 ## Being polite to the API
 
 Each key gets about 10 requests a second. The server-side client:

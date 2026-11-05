@@ -46,6 +46,9 @@ Vercel runs FastAPI with zero configuration: it finds the `app` object in `main.
 3. Deploy. `vercel.json` pins the function to Sydney (`syd1`), next to the API; from a US region each page
    pays several trans-Pacific round trips.
 
+To put the site behind a password, also set `DEMO_GATE=on` and `DEMO_PASSWORD=<a password>`: visitors see
+**Enter your password** first. `DEMO_GATE=off` (or unset) leaves it open, which is how it runs locally.
+
 ## Changing the styles
 
 `static/app.css` is built from `static/input.css` by Tailwind, scanning `templates/` for class names. Running the app
