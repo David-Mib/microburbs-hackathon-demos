@@ -5,6 +5,8 @@ export async function proxy(req: NextRequest) {
   if (!GATE_ON) return NextResponse.next();
   const { pathname, search } = req.nextUrl;
   if (pathname === "/login" || pathname === "/api/login") return NextResponse.next();
+  // Files from public/ (logo, photos, map worker) load on the login page too.
+  if (!pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname)) return NextResponse.next();
   if (await isUnlocked(req.cookies.get(GATE_COOKIE)?.value)) return NextResponse.next();
 
   if (pathname.startsWith("/api/")) {
@@ -16,6 +18,6 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except the build's static files and the icons.
+  // Everything except the build's static files and the icons; public/ files are let through above.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png).*)"],
 };
