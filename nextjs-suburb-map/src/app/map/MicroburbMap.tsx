@@ -4,10 +4,10 @@ import { useMemo } from "react";
 import { ChoroplethMap } from "@/components/ChoroplethMap";
 import { Failed, NoData, PageShell, Panel, Pending } from "@/components/PageShell";
 import { Choices, SuburbSelect } from "@/components/Pickers";
-import { EXAMPLE_SUBURB, shortName, suburbPath } from "@/lib/api";
-import { useApi } from "@/lib/api-store";
+import { EXAMPLE_SUBURB, shortName } from "@/lib/api";
 import { useSuburbShapes } from "@/lib/area";
-import { DIMS, LAYERS, type LayerBody, readLayer } from "@/lib/layers";
+import { DIMS, LAYERS, readLayer } from "@/lib/layers";
+import { useLayer } from "@/lib/use-layer";
 import { useQueryParam } from "@/lib/use-query-param";
 
 export function MicroburbMap() {
@@ -16,7 +16,7 @@ export function MicroburbMap() {
   const [dim, setDim] = useQueryParam("score", "lifestyle", DIMS);
   const layer = LAYERS.find((l) => l.key === layerKey)!;
 
-  const { data, call, loading, error } = useApi<LayerBody>(suburbPath(suburb, layer.tail));
+  const { data, calls, loading, error, legend } = useLayer(suburb, layer);
   const shapes = useSuburbShapes(suburb);
 
   const { values, labels } = useMemo(() => readLayer(data, layer, dim), [data, layer, dim]);
@@ -51,9 +51,9 @@ export function MicroburbMap() {
       }
     >
       <Panel
-        title={`${layer.legend} in ${label}${layer.key === "livability" ? `: ${dim}` : ""}`}
+        title={`${legend} in ${label}${layer.key === "livability" ? `: ${dim}` : ""}`}
         note={[layer.key === "livability" ? dimInfo?.description : data?.definition, layer.note].filter(Boolean).join(" ")}
-        calls={[call, ...shapes.calls]}
+        calls={[...calls, ...shapes.calls]}
       >
         {loading || shapes.loading ? (
           <Pending height={420} />
@@ -70,8 +70,8 @@ export function MicroburbMap() {
             labels={labels}
             format={layer.format}
             ramp={layer.ramp}
-            legend={layer.legend}
-            caption={`${layer.legend} by mesh block in ${label}`}
+            legend={legend}
+            caption={`${legend} by mesh block in ${label}`}
           />
         )}
       </Panel>

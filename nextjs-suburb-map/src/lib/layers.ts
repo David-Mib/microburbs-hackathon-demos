@@ -29,18 +29,21 @@ export type Layer = {
   /** Pull the block's number out of a row. */
   value: (row: Row, dim: string) => unknown;
   note?: string;
+  /** Unit version of a house-only layer, asked for when the house map is thin. */
+  unit?: { tail: string; legend: string };
 };
 
 export const LAYERS: Layer[] = [
   {
     key: "price",
-    label: "House price",
+    label: "Price",
     tail: "market/median-price-map",
     legend: "Median house price",
     ramp: RAMPS.blue,
     format: money,
     value: (r) => r.median_price,
-    note: "Houses only, so apartment-only blocks (most of the CBD) have no figure.",
+    note: "Houses, or units where the suburb has too few houses for a map.",
+    unit: { tail: "market/median-price-map?property_type=unit", legend: "Median unit price" },
   },
   {
     key: "rent",
@@ -50,7 +53,8 @@ export const LAYERS: Layer[] = [
     ramp: RAMPS.violet,
     format: perWeek,
     value: (r) => r.weekly_rent,
-    note: "Houses only, so apartment-only blocks have no figure.",
+    note: "Houses, or units where the suburb has too few houses for a map.",
+    unit: { tail: "market/rent-map?property_type=unit", legend: "Median weekly unit rent" },
   },
   {
     key: "yield",
