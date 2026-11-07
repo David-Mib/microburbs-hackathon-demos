@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Microburbs Property Facts — buyer value</title>
+    <style>
+      :root { color: #17233c; background: #f5f7fb; font: 16px/1.65 system-ui, sans-serif; }
+      body { max-width: 820px; margin: 0 auto; padding: 42px 22px; }
+      header, section { margin-bottom: 22px; border: 1px solid #e1e7f0; border-radius: 16px; padding: 22px; background: white; }
+      .eyebrow { color: #526bb4; font-size: 12px; font-weight: 750; letter-spacing: .12em; }
+      h1 { margin: 6px 0 10px; font-size: clamp(30px, 6vw, 46px); line-height: 1.1; }
+      h2 { margin: 0 0 10px; font-size: 20px; }
+      p { margin: 8px 0; color: #526078; }
+      table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+      th, td { border-bottom: 1px solid #e7ebf2; padding: 10px 8px; vertical-align: top; }
+      th { color: #253552; }
+      .note { border-left: 3px solid #5474cf; padding-left: 13px; }
+      .sources { padding-left: 20px; font-size: 14px; }
+      a { color: #3156b8; }
+      footer { color: #758198; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p class="eyebrow">THE MICROBURBS HACKATHON · CHROME EXTENSION</p>
+      <h1>More context for the home a buyer is viewing.</h1>
+      <p>Microburbs Property Facts adds matched, property-level context beside a supported listing without copying its description or images.</p>
+    </header>
+
+    <section>
+      <h2>What buyers already see</h2>
+      <table>
+        <thead><tr><th>Product</th><th>What it provides</th><th>What our panel adds</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://www.realestate.com.au/" target="_blank" rel="noreferrer">realestate.com.au</a> and <a href="https://www.domain.com.au/" target="_blank" rel="noreferrer">Domain</a></td><td>Listing-specific information such as the advertised guide, marketing description, photos, address, and advertised home features.</td><td>A separate, matched Microburbs estimate with its range and confidence, plus API property basics. It is an additional reference, not a replacement for the listing.</td></tr>
+          <tr><td><a href="https://www.homerapp.com.au/" target="_blank" rel="noreferrer">Homer</a> browser extension</td><td>Its product pages describe campaign history, guide-price changes, and agent pricing insights on Australian listings.</td><td>We focus on a dated property-level value estimate and range, confidence, and physical basics from the Microburbs API. This complements campaign-history tools rather than duplicating their core focus.</td></tr>
+          <tr><td><a href="https://www.propertytrack.co/" target="_blank" rel="noreferrer">Property Track</a></td><td>Its site describes asking-price history and changes for Rightmove listings, with comparables, recent sales, and trends in a paid tier.</td><td>Our hackathon prototype targets Australian listing pages and brings Microburbs property facts; Property Track’s stated listing coverage is UK-focused.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>What this panel adds</h2>
+      <table>
+        <thead><tr><th>Microburbs fact</th><th>Why it helps during browsing</th></tr></thead>
+        <tbody>
+          <tr><td>Automated value estimate and range</td><td>Gives buyers a reference point to compare with an advertised guide; the range discourages treating an estimate as a guaranteed sale price.</td></tr>
+          <tr><td>Estimate confidence and date</td><td>Gives the estimate context, so buyers can consider its confidence and recency instead of seeing a number in isolation.</td></tr>
+          <tr><td>Bedrooms, bathrooms, parking, home type, and land area</td><td>Offers a compact cross-check of core property attributes while the buyer compares homes.</td></tr>
+          <tr><td>Address match confirmation</td><td>Prevents facts for a nearby or similarly named home from being presented as if they were certain.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Why this design</h2>
+      <p>Buyers need a quick way to compare homes, but listing copy and advertised prices are not the same as independent property context. The panel prioritizes a dated estimate with its range and confidence, then adds a short set of physical attributes. It stays beside the listing so the buyer can compare without switching tabs. These facts were chosen because value context helps assess the asking guide, while bedrooms, bathrooms, parking, type, and land area help compare the physical homes. Each is shown only when the API returns it.</p>
+      <p class="note">The extension reads only an address from known address-specific fields, or accepts one typed by the user. It requests Microburbs facts only after matching that address. It does not collect or copy listing text or photos.</p>
+      <p>Coverage and data availability depend on the hackathon API. Estimates are automated and indicative; buyers should verify property details and seek professional advice before making a decision.</p>
+    </section>
+
+    <section>
+      <h2>Live API spot-check</h2>
+      <p>On 7 November 2026, six addresses shown in Domain's Waterloo sale-search results were checked against the live Microburbs address geocoder. Five returned an exact normalized address match; one returned no exact match among the API candidates. The extension now fails closed for that case and does not load facts for an unrelated candidate.</p>
+      <p>For the five matched homes, the API returned an automated valuation for two; three had bedroom, bathroom, and parking counts available. Other values were missing on some homes. This illustrates why estimates and property basics are shown only when returned, and why address confirmation and coverage limitations matter.</p>
+      <p>This was an API spot-check, not a claim that the unpacked extension was installed and end-to-end tested on all six listing pages. The demo video must show the extension running on real listings.</p>
+    </section>
+
+    <section>
+      <h2>Sources and scope</h2>
+      <p>This comparison summarizes public product descriptions, not an independent usability or feature audit. Products change; source pages were checked 7 November 2026.</p>
+      <ul class="sources">
+        <li><a href="https://www.microburbs.com.au/p/hackathon-task-chrome-extension" target="_blank" rel="noreferrer">Microburbs hackathon brief</a> (challenge context and task contract).</li>
+        <li><a href="https://chromewebstore.google.com/detail/homer-formerly-koaladata/hlmlbjneliokncgbophonbofnikfimja" target="_blank" rel="noreferrer">Homer Chrome Web Store listing</a> and <a href="https://www.homerapp.com.au/" target="_blank" rel="noreferrer">Homer product site</a>.</li>
+        <li><a href="https://www.propertytrack.co/" target="_blank" rel="noreferrer">Property Track product site</a>.</li>
+        <li><a href="https://www.realestate.com.au/" target="_blank" rel="noreferrer">realestate.com.au</a> and <a href="https://www.domain.com.au/" target="_blank" rel="noreferrer">Domain</a> listing portals.</li>
+      </ul>
+    </section>
+    <footer>Microburbs Property Facts · Hackathon prototype · Built for supported realestate.com.au and domain.com.au listing pages.</footer>
+  </body>
+</html>
