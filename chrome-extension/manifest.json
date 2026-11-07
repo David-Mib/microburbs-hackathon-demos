@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Microburbs Property Facts",
+  "version": "1.0.0",
+  "description": "See Microburbs property facts beside supported Australian property listings.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://api-ht.microburbs.com.au/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Open Microburbs property facts"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.realestate.com.au/*",
+        "*://*.domain.com.au/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17233c;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; min-width: 290px; }
+
+main { padding: 18px 16px 14px; }
+
+.brand { display: flex; align-items: center; gap: 11px; margin: 0 0 18px; }
+.brand-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; color: white; background: #3156b8; font-size: 19px; font-weight: 750; }
+.eyebrow { margin: 0 0 4px; color: #71809c; font-size: 10px; font-weight: 750; letter-spacing: .12em; }
+h1 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+h2 { margin: 0; font-size: 15px; letter-spacing: -.02em; }
+p { line-height: 1.45; }
+.muted { margin: 7px 0 12px; color: #68758d; font-size: 12px; }
+
+.key-card, .address-section, .fact-card, .candidate {
+  border: 1px solid #e3e8f1;
+  border-radius: 13px;
+  background: #fff;
+}
+.key-card { padding: 13px; }
+label { display: block; margin: 0 0 6px; color: #46536b; font-size: 11px; font-weight: 650; }
+input { width: 100%; min-width: 0; border: 1px solid #d5dce8; border-radius: 8px; padding: 10px; color: #17233c; background: #fff; font: inherit; font-size: 12px; }
+input:focus { outline: 2px solid #93adf2; outline-offset: 1px; border-color: #5276d1; }
+.key-input-row { display: flex; gap: 7px; }
+.button { border: 0; border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.button:disabled { opacity: .55; cursor: wait; }
+.button-primary { color: white; background: #3156b8; }
+.button-dark { width: 100%; margin-top: 8px; color: white; background: #17233c; }
+.key-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; }
+.small-status { margin: 8px 0 0; color: #62708a; font-size: 11px; }
+.text-button { border: 0; padding: 8px 0 0; color: #4e61a6; background: transparent; font: inherit; font-size: 11px; cursor: pointer; }
+
+.address-section { margin-top: 12px; padding: 13px; }
+.section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.badge { max-width: 118px; border-radius: 20px; padding: 5px 8px; color: #53617a; background: #edf1f7; font-size: 9px; font-weight: 700; text-align: center; }
+.badge.detected { color: #21644d; background: #e5f5ee; }
+.message { display: none; margin: 12px 1px; border-radius: 9px; padding: 10px; color: #45536b; background: #eaf0fb; font-size: 12px; }
+.message.visible { display: block; }
+.message.error { color: #8d2929; background: #fff0ef; }
+
+.matches { margin-top: 13px; }
+.matches h3 { margin: 0 0 8px; font-size: 13px; }
+.candidate-list { display: grid; gap: 7px; }
+.candidate { width: 100%; padding: 10px; color: #25324a; font: inherit; font-size: 12px; line-height: 1.4; text-align: left; cursor: pointer; }
+.candidate:hover, .candidate:focus-visible { border-color: #6684d3; outline: none; background: #f7f9ff; }
+
+.property { display: grid; gap: 10px; margin-top: 14px; }
+.property-heading { padding: 2px 1px 0; }
+.property-heading h3 { margin: 0; font-size: 14px; line-height: 1.4; }
+.property-heading p { margin: 5px 0 0; color: #6d7a90; font-size: 10px; }
+.facts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.fact-card { min-height: 72px; padding: 11px 10px; }
+.fact-card.primary { grid-column: 1 / -1; color: white; border-color: #3156b8; background: linear-gradient(130deg, #294a9e, #466cc7); }
+.fact-label { margin: 0 0 7px; color: #71809a; font-size: 10px; font-weight: 650; }
+.primary .fact-label { color: #d7e1ff; }
+.fact-value { margin: 0; color: #1d2b45; font-size: 17px; font-weight: 760; letter-spacing: -.03em; overflow-wrap: anywhere; }
+.primary .fact-value { color: white; font-size: 23px; }
+.fact-note { margin: 4px 0 0; color: #d7e1ff; font-size: 10px; }
+.empty-facts { margin: 0; border-radius: 9px; padding: 11px; color: #68758d; background: white; font-size: 12px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; border-top: 1px solid #e3e8f1; padding-top: 11px; color: #7a879c; font-size: 9px; line-height: 1.4; }
+footer p { margin: 0; }
+footer a { color: #4e61a6; text-decoration: none; white-space: nowrap; }
+
+@media (max-width: 330px) {
+  main { padding-inline: 12px; }
+  .badge { max-width: 95px; }
+}

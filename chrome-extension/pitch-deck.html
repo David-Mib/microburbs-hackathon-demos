@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BurbBuddy — Microburbs Property Research Companion</title>
+    <style>
+      :root {
+        color: #17233c;
+        background: #e9edf5;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        font-synthesis: none;
+        font-size: 16px;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      .deck { display: grid; gap: 20px; justify-items: center; padding: 24px; }
+      .slide {
+        position: relative;
+        display: flex;
+        width: min(100%, 1120px);
+        aspect-ratio: 16 / 9;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        padding: 7% 8%;
+        border: 1px solid #dfe5ef;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 16px 48px #24375a18;
+        page-break-after: always;
+        break-after: page;
+      }
+      .slide:last-child { page-break-after: auto; break-after: auto; }
+      .slide.dark { color: white; border: 0; background: linear-gradient(135deg, #172b60, #3156b8 72%, #5581df); }
+      .slide.soft { background: linear-gradient(135deg, #fff 20%, #edf3ff); }
+      .eyebrow { margin: 0 0 14px; color: #5270bd; font-size: clamp(10px, 1.15vw, 14px); font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+      .dark .eyebrow { color: #c6d5ff; }
+      h1 { max-width: 820px; margin: 0; font-size: clamp(38px, 6vw, 74px); line-height: 1.04; letter-spacing: -.055em; }
+      h2 { margin: 0 0 24px; font-size: clamp(28px, 4vw, 46px); line-height: 1.08; letter-spacing: -.045em; }
+      h3 { margin: 0 0 8px; font-size: clamp(16px, 1.8vw, 21px); }
+      p { margin: 0; color: #5a6780; font-size: clamp(14px, 1.55vw, 19px); line-height: 1.48; }
+      .dark p { color: #e0e8ff; }
+      .lead { max-width: 720px; margin-top: 20px; font-size: clamp(18px, 2.2vw, 26px); }
+      .brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 46px; font-size: 16px; font-weight: 750; }
+      .brand-mark { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; color: #3156b8; background: white; font-size: 19px; }
+      .dark .brand-mark { color: white; background: #ffffff20; }
+      .footer { position: absolute; right: 8%; bottom: 4%; left: 8%; display: flex; justify-content: space-between; color: #8190a8; font-size: 11px; }
+      .dark .footer { color: #c6d5ff; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .grid.two { grid-template-columns: repeat(2, 1fr); }
+      .card { min-height: 142px; padding: 20px; border: 1px solid #e3e9f2; border-radius: 15px; background: #fff; }
+      .card p { font-size: clamp(12px, 1.25vw, 15px); }
+      .icon { display: grid; width: 36px; height: 36px; margin-bottom: 15px; place-items: center; border-radius: 11px; color: #3156b8; background: #edf2ff; font-weight: 800; }
+      .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; align-items: stretch; }
+      .step { position: relative; min-height: 180px; padding: 17px 15px; border: 1px solid #dce5f6; border-radius: 14px; background: white; }
+      .step-num { display: grid; width: 27px; height: 27px; margin-bottom: 16px; place-items: center; border-radius: 50%; color: white; background: #3156b8; font-size: 13px; font-weight: 800; }
+      .step p { font-size: clamp(11px, 1.15vw, 14px); }
+      .step h3 { font-size: clamp(14px, 1.4vw, 17px); }
+      .mock { display: grid; grid-template-columns: 1fr 285px; gap: 16px; width: 100%; margin-top: 4px; }
+      .listing { min-height: 280px; padding: 24px; border: 1px solid #e2e7ef; border-radius: 16px; background: linear-gradient(145deg, #f3f5f8, #e8edf5); }
+      .image-placeholder { display: grid; height: 125px; margin-bottom: 18px; place-items: center; border-radius: 11px; color: #7a879d; background: linear-gradient(140deg, #dce5f2, #cdd8e7); font-size: 13px; }
+      .listing h3 { font-size: 19px; }
+      .listing p { margin-top: 6px; font-size: 13px; }
+      .panel { padding: 17px; border: 1px solid #e0e7f2; border-radius: 16px; background: white; box-shadow: 0 8px 24px #24375a12; }
+      .panel-head { display: flex; align-items: center; gap: 9px; margin-bottom: 15px; font-weight: 800; }
+      .panel-head .brand-mark { width: 29px; height: 29px; border-radius: 9px; color: white; background: #3156b8; font-size: 15px; }
+      .estimate { margin-bottom: 10px; padding: 13px; border-radius: 11px; color: white; background: linear-gradient(130deg, #294a9e, #466cc7); }
+      .estimate span, .metric span { display: block; color: #d7e1ff; font-size: 10px; }
+      .estimate strong { display: block; margin-top: 5px; font-size: 23px; }
+      .estimate small { font-size: 10px; }
+      .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+      .metric { padding: 10px; border: 1px solid #e7ebf2; border-radius: 9px; }
+      .metric span { color: #72809a; }
+      .metric strong { display: block; margin-top: 5px; font-size: 15px; }
+      .pill { display: inline-flex; margin-top: 10px; border-radius: 20px; padding: 5px 9px; color: #21644d; background: #e5f5ee; font-size: 10px; font-weight: 750; }
+      .callout { margin-top: 16px; border-left: 4px solid #5270bd; padding: 4px 0 4px 15px; }
+      .callout p { font-size: clamp(13px, 1.4vw, 17px); }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+      .stat { padding: 18px; border-radius: 13px; background: #f0f4fc; }
+      .stat strong { display: block; color: #3156b8; font-size: clamp(27px, 4vw, 44px); letter-spacing: -.05em; }
+      .stat span { color: #5a6780; font-size: clamp(11px, 1.2vw, 14px); }
+      .roi { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-top: 10px; }
+      .roi-main { padding: 22px; border-radius: 15px; color: white; background: linear-gradient(130deg, #294a9e, #466cc7); }
+      .roi-main span { display: block; color: #d7e1ff; font-size: 13px; }
+      .roi-main strong { display: block; margin: 8px 0; font-size: clamp(38px, 5vw, 58px); letter-spacing: -.05em; }
+      .roi-main p { color: #e0e8ff; font-size: 13px; }
+      .roi-side { display: grid; gap: 10px; }
+      .roi-note { padding: 15px; border: 1px solid #e3e9f2; border-radius: 13px; background: white; }
+      .roi-note strong { display: block; margin-bottom: 5px; color: #3156b8; font-size: 19px; }
+      .roi-note p { font-size: 12px; }
+      .caveat { margin-top: 18px; padding: 12px 15px; border-radius: 10px; color: #78551b; background: #fff6df; font-size: 13px; line-height: 1.45; }
+      .closing-list { display: grid; gap: 13px; margin-top: 24px; }
+      .closing-list div { display: flex; gap: 11px; align-items: flex-start; color: #e4ebff; font-size: clamp(15px, 1.7vw, 20px); }
+      .check { display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 50%; color: #24478f; background: #dce7ff; font-size: 13px; font-weight: 900; }
+      .small { font-size: 12px; }
+      a { color: inherit; }
+      @media (max-width: 720px) {
+        .deck { padding: 8px; gap: 8px; }
+        .slide { min-height: 500px; aspect-ratio: auto; padding: 8%; }
+        .flow { grid-template-columns: 1fr; }
+        .step { min-height: auto; }
+        .mock { grid-template-columns: 1fr; }
+        .listing { min-height: 180px; }
+        .grid { grid-template-columns: 1fr; }
+        .grid.two { grid-template-columns: 1fr; }
+        .stats { grid-template-columns: 1fr; }
+      }
+      @page { size: 13.333in 7.5in; margin: 0; }
+      @media print {
+        :root { background: white; }
+        .deck { display: block; padding: 0; }
+        .slide { width: 13.333in; height: 7.5in; min-height: 0; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+        .footer { font-size: 9pt; }
+        a { text-decoration: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="slide dark">
+        <div class="brand"><span class="brand-mark">B</span> BurbBuddy · Microburbs</div>
+        <p class="eyebrow">THE MICROBURBS HACKATHON · CHROME EXTENSION</p>
+        <h1>Compare the home. Understand the context.</h1>
+        <p class="lead">BurbBuddy is the proposed name for a Microburbs-powered property research companion beside Australian listings.</p>
+        <div class="footer"><span>Proposed product name · current extension UI: Microburbs Property Facts</span><span>01 / 06</span></div>
+      </section>
+
+      <section class="slide soft">
+        <p class="eyebrow">THE BUYER PROBLEM</p>
+        <h2>Biggest purchase. Fragmented research.</h2>
+        <div class="grid">
+          <article class="card">
+            <div class="icon">01</div>
+            <h3>Listing details live here</h3>
+            <p>Price guide, photos and campaign information help describe the home—but leave buyers comparing details across tabs.</p>
+          </article>
+          <article class="card">
+            <div class="icon">02</div>
+            <h3>Property context lives elsewhere</h3>
+            <p>Buyers need a useful second reference for value and property basics, and a clear signal when information is missing.</p>
+          </article>
+          <article class="card">
+            <div class="icon">03</div>
+            <h3>Memory becomes the comparison tool</h3>
+            <p>Switching between homes makes it harder to compare like with like and keep track of what is known.</p>
+          </article>
+        </div>
+        <div class="callout"><p>BurbBuddy puts Microburbs context beside the listing—right when the buyer is making a comparison.</p></div>
+        <div class="footer"><span>Designed to complement listings and buyer due diligence</span><span>02 / 06</span></div>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">THE CUSTOMER PROMISE</p>
+        <h2>One listing. More useful context. Less guesswork.</h2>
+        <div class="grid">
+          <article class="card">
+            <div class="icon">VALUE</div>
+            <h3>A second reference</h3>
+            <p>See the Microburbs automated estimate and range beside the advertised guide, when available.</p>
+          </article>
+          <article class="card">
+            <div class="icon">FACTS</div>
+            <h3>Key basics together</h3>
+            <p>Review returned bedrooms, bathrooms, parking and other supported property details in one place.</p>
+          </article>
+          <article class="card">
+            <div class="icon">CLEAR</div>
+            <h3>Honest about uncertainty</h3>
+            <p>See confidence and estimate date when supplied. Missing facts stay missing—never made up.</p>
+          </article>
+        </div>
+        <div class="callout"><p>It is a comparison aid, not a formal valuation or a recommendation to buy.</p></div>
+        <div class="footer"><span>Customer benefit: clearer, more consistent listing research</span><span>03 / 06</span></div>
+      </section>
+
+      <section class="slide soft">
+        <p class="eyebrow">SIMPLE BY DESIGN</p>
+        <h2>From the listing address to a checked property match.</h2>
+        <div class="flow">
+          <article class="step"><div class="step-num">1</div><h3>Open a home</h3><p>Browse a supported Domain or realestate.com.au property listing.</p></article>
+          <article class="step"><div class="step-num">2</div><h3>Check address</h3><p>Review the detected address or enter it yourself.</p></article>
+          <article class="step"><div class="step-num">3</div><h3>Verify match</h3><p>Proceed only when one clear address match is found.</p></article>
+          <article class="step"><div class="step-num">4</div><h3>See available facts</h3><p>Load the matched property's available Microburbs information.</p></article>
+          <article class="step"><div class="step-num">5</div><h3>Compare your way</h3><p>Use the context alongside the listing; decide for yourself.</p></article>
+        </div>
+        <div class="caveat">Trust by design: no property facts load for a non-match. The prototype uses the address for lookup and does not collect listing descriptions or photos. Coverage and data availability vary.</div>
+        <div class="footer"><span>Current prototype flow · no technical knowledge needed by the buyer</span><span>04 / 06</span></div>
+      </section>
+
+      <section class="slide">
+        <p class="eyebrow">WHY BURBBUDDY CAN STAND OUT</p>
+        <h2>Useful now. More valuable as the journey grows.</h2>
+        <div class="grid two">
+          <article class="card">
+            <div class="icon">NOW</div>
+            <h3>Current prototype</h3>
+            <p>Built to require a unique address match, show returned estimate/range and basics, and explain when data is missing.</p>
+          </article>
+          <article class="card">
+            <div class="icon">NEXT</div>
+            <h3>Feasible roadmap</h3>
+            <p>Validate one area-context card from documented Microburbs data, then add a local shortlist comparison and buyer-chosen suburb filters.</p>
+          </article>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong>5 / 6</strong><span>Waterloo addresses had one exact normalized API match in the spot-check</span></div>
+          <div class="stat"><strong>2 / 5</strong><span>Matched addresses returned an AVM in that sample</span></div>
+          <div class="stat"><strong>15 / 15</strong><span>Automated extension tests passed</span></div>
+        </div>
+        <div class="caveat">Area context and shortlist comparison are proposed—not implemented. API results are a small dated sample, not a guarantee of live listing availability or future results.</div>
+        <div class="footer"><span>Microburbs value: a new point-of-research surface; validate adoption in a pilot</span><span>05 / 06</span></div>
+      </section>
+
+      <section class="slide soft">
+        <p class="eyebrow">A BUSINESS CASE WORTH TESTING</p>
+        <h2>Turn useful context into a repeatable customer relationship.</h2>
+        <div class="roi">
+          <div class="roi-main">
+            <span>Illustrative scenario · not a forecast</span>
+            <strong>A$48k</strong>
+            <p>Gross annual subscription revenue at 10,000 monthly active users × 5% paid conversion × A$8/month × 12.</p>
+          </div>
+          <div class="roi-side">
+            <article class="roi-note">
+              <strong>79 paid users</strong>
+              <p>Illustrative break-even at A$8/month, 80% gross margin and A$500 monthly fixed cost—before acquisition, tax and other excluded costs.</p>
+            </article>
+            <article class="roi-note">
+              <strong>Value for Microburbs</strong>
+              <p>Put property and area data into the buyer's research moment; measure activation, repeat use, field engagement and cost per useful session.</p>
+            </article>
+          </div>
+        </div>
+        <div class="caveat">These are hypothetical assumptions, not validated pricing, conversion, costs, commercial terms or ROI. The 10,000-user base is illustrative—not a BurbBuddy audience forecast. Validate with an opt-in pilot.</div>
+        <div class="footer"><span>Next step: approve API/commercial terms and test buyer value in a measured pilot</span><span>06 / 06</span></div>
+      </section>
+    </main>
+  </body>
+</html>

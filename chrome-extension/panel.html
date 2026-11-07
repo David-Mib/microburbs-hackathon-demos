@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Microburbs Property Facts</title>
+    <link rel="stylesheet" href="panel.css">
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true">M</div>
+        <div>
+          <p class="eyebrow">PROPERTY CONTEXT</p>
+          <h1>Microburbs</h1>
+        </div>
+      </header>
+
+      <section class="key-card" aria-labelledby="key-heading">
+        <h2 id="key-heading">Connect your team key</h2>
+        <p class="muted">Saved only in this browser profile. It is sent to the Microburbs API, not to the listing site.</p>
+        <form id="key-form">
+          <label for="api-key">Microburbs team key</label>
+          <div class="key-input-row">
+            <input id="api-key" name="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your team key">
+            <button type="submit" class="button button-primary">Save</button>
+          </div>
+        </form>
+        <div class="key-footer">
+          <p id="key-status" class="small-status" role="status">No key saved.</p>
+          <button id="clear-key" type="button" class="text-button" hidden>Remove key</button>
+        </div>
+      </section>
+
+      <section class="address-section" aria-labelledby="address-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">CURRENT LISTING</p>
+            <h2 id="address-heading">Find this property</h2>
+          </div>
+          <span id="source-badge" class="badge">Waiting for address</span>
+        </div>
+        <p class="muted">We look only for an address in known address fields. You can also enter it yourself.</p>
+        <form id="address-form">
+          <label class="sr-only" for="address">Property address</label>
+          <input id="address" name="address" type="text" maxlength="250" autocomplete="street-address" placeholder="e.g. Unit 105, 8 Sam Sing Street, Waterloo" required>
+          <button type="submit" class="button button-dark">Match address</button>
+        </form>
+      </section>
+
+      <p id="message" class="message" role="status" aria-live="polite"></p>
+      <section id="matches" class="matches" aria-label="Address matches" hidden></section>
+      <section id="property" class="property" aria-label="Microburbs property facts" hidden></section>
+
+      <footer>
+        <p>Indicative estimates only. Confirm the address and do your own due diligence.</p>
+        <a href="https://www.microburbs.com.au/" target="_blank" rel="noreferrer">About Microburbs</a>
+      </footer>
+    </main>
+    <script src="panel.js"></script>
+  </body>
+</html>
